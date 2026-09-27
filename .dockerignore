@@ -1,0 +1,12 @@
+.git
+.gitignore
+.planning
+.context
+.github
+**/__pycache__
+**/*.pyc
+**/*.pyo
+**/*.pyd
+node_modules
+*.tmp
+*.log
