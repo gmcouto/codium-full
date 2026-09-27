@@ -1,0 +1,21 @@
+services:
+  codium-full:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: codium-full:test
+    container_name: codium-full-test
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+      - PASSWORD=testpassword
+    volumes:
+      - codium_test_config:/config
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8443:8443"
+    restart: unless-stopped
+
+volumes:
+  codium_test_config:
