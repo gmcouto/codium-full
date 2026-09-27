@@ -57,3 +57,24 @@ RUN apt-get update && \
     && ! command -v tmux && ! command -v screen \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Install Rust (stable) into /opt/rust and symlink to /usr/local/bin
+RUN mkdir -p /opt/rust \
+    && curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | HOME=/root RUSTUP_HOME=/opt/rust/rustup CARGO_HOME=/opt/rust/cargo sh -s -- -y --default-toolchain stable --profile minimal --no-modify-path \
+    && chmod -R a+rX /opt/rust \
+    && ln -sf /opt/rust/cargo/bin/* /usr/local/bin/ \
+    && rm -rf /opt/rust/cargo/registry /opt/rust/cargo/git \
+    && su -s /bin/bash abc -c 'rustc --version && cargo --version'
+
+# Install Go toolchain into /usr/local/go and symlink to /usr/local/bin
+RUN curl -fsSL "https://go.dev/dl/go1.24.1.linux-${TARGETARCH}.tar.gz" -o /tmp/go.tar.gz \
+    && tar -C /usr/local -xzf /tmp/go.tar.gz \
+    && rm -f /tmp/go.tar.gz \
+    && ln -sf /usr/local/go/bin/* /usr/local/bin/ \
+    && su -s /bin/bash abc -c 'go version'
+
+# Global container environment configuration
+ENV RUSTUP_HOME=/opt/rust/rustup \
+    GOROOT=/usr/local/go \
+    GOPATH=/config/go \
+    PATH=/usr/local/go/bin:/opt/rust/cargo/bin:${PATH}
