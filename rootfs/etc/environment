@@ -1,0 +1,5 @@
+PATH="/usr/local/go/bin:/opt/rust/cargo/bin:/config/.local/share/pnpm:/usr/local/bin:/usr/bin:/bin:/usr/local/sbin:/usr/sbin:/sbin"
+PNPM_HOME="/config/.local/share/pnpm"
+GOROOT="/usr/local/go"
+GOPATH="/config/go"
+RUSTUP_HOME="/opt/rust/rustup"

@@ -23,3 +23,7 @@ if [ ! -d "/config/.ssh" ]; then
     chown abc:abc /config/.ssh
     chmod 0700 /config/.ssh
 fi
+
+if [ "$(getent passwd abc | cut -d: -f7)" != "/bin/bash" ]; then
+    usermod -s /bin/bash abc 2>/dev/null || chsh -s /bin/bash abc 2>/dev/null || true
+fi
