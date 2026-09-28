@@ -1,0 +1,35 @@
+#!/bin/sh
+set -f
+if [ "${CODIUM_BYPASS_SHIMS:-0}" = 1 ]; then
+    if [ -x /usr/bin/npx ]; then exec /usr/bin/npx "$@"; fi
+    printf '%s\n' '[codium-shim] native npx is unavailable; use pnpm exec or pnpm dlx.' >&2
+    exit 127
+fi
+if [ "$#" -eq 0 ]; then
+    printf '%s\n' '[codium-shim] npx requires a command. Use pnpm exec or pnpm dlx.' >&2
+    exit 1
+fi
+case "$1" in
+    -v|--version)
+        version=$(/usr/bin/npx --version 2>/dev/null || printf '%s' unknown)
+        pnpm_version=$(/usr/bin/pnpm --version 2>/dev/null || printf '%s' unknown)
+        printf '%s (codium npx shim -> pnpm %s)\n' "$version" "$pnpm_version"
+        exit 0
+        ;;
+    -h|--help) exec /usr/bin/pnpm exec --help ;;
+esac
+mode=dlx
+args=""
+if [ "$1" = --no-install ]; then mode=exec; shift; fi
+if [ "$#" -eq 0 ]; then
+    printf '%s\n' '[codium-shim] npx --no-install requires a local command; use pnpm exec.' >&2
+    exit 1
+fi
+target=$1
+case "$target" in
+    -* ) printf '[codium-shim] npx options must precede a command; use pnpm exec or pnpm dlx.\n' >&2; exit 1 ;;
+esac
+if [ "$mode" = exec ] || [ -x "./node_modules/.bin/$target" ]; then
+    exec /usr/bin/pnpm exec "$@"
+fi
+exec /usr/bin/pnpm dlx "$@"

@@ -53,6 +53,7 @@ RUN apt-get update && \
         fzf \
         jq \
         zoxide \
+    && npm install --global --prefix /usr pnpm yarn \
     && ln -sf "$(command -v fdfind)" /usr/local/bin/fd \
     && mkdir -p -m 0755 /var/run/sshd \
     && (apt-get purge -y tmux screen || true) \
@@ -60,6 +61,12 @@ RUN apt-get update && \
     && python3 --version | grep -E '3\.12\.' \
     && docker --version \
     && gh --version && rg --version && fd --version && fzf --version && jq --version && zoxide --version \
+    && pnpm --version \
+    && yarn --version \
+    && ln -sf /usr/bin/npm /usr/local/bin/npm-native \
+    && ln -sf /usr/bin/npx /usr/local/bin/npx-native \
+    && ln -sf /usr/bin/yarn /usr/local/bin/yarn-native \
+    && ln -sf /usr/bin/pnpm /usr/local/bin/pnpm \
     && ! command -v tmux && ! command -v screen \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
