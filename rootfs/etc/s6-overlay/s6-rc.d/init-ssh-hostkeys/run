@@ -1,0 +1,25 @@
+#!/command/with-contenv bash
+set -euo pipefail
+
+mkdir -p -m 0755 /var/run/sshd
+
+HOSTKEYS_DIR="/config/ssh/host_keys"
+mkdir -p -m 0700 "$HOSTKEYS_DIR"
+chown root:root "$HOSTKEYS_DIR"
+chmod 0700 "$HOSTKEYS_DIR"
+
+for keytype in ed25519 ecdsa rsa; do
+    keyfile="${HOSTKEYS_DIR}/ssh_host_${keytype}_key"
+    if [ ! -f "$keyfile" ]; then
+        ssh-keygen -t "$keytype" -N "" -f "$keyfile"
+        chmod 0600 "$keyfile"
+        chmod 0644 "${keyfile}.pub"
+        chown root:root "$keyfile" "${keyfile}.pub"
+    fi
+done
+
+if [ ! -d "/config/.ssh" ]; then
+    mkdir -p -m 0700 /config/.ssh
+    chown abc:abc /config/.ssh
+    chmod 0700 /config/.ssh
+fi

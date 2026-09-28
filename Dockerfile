@@ -28,6 +28,7 @@ RUN apt-get update && \
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
         build-essential \
+        openssh-server \
         nodejs \
         python3 \
         python3-pip \
@@ -53,6 +54,7 @@ RUN apt-get update && \
         jq \
         zoxide \
     && ln -sf "$(command -v fdfind)" /usr/local/bin/fd \
+    && mkdir -p -m 0755 /var/run/sshd \
     && (apt-get purge -y tmux screen || true) \
     && node --version | grep -E '^v22\.' \
     && python3 --version | grep -E '3\.12\.' \
@@ -115,3 +117,5 @@ ENV PNPM_HOME="/config/.local/share/pnpm" \
     GOPATH="/config/go" \
     RUSTUP_HOME="/opt/rust/rustup" \
     PATH="/usr/local/go/bin:/opt/rust/cargo/bin:/config/.local/share/pnpm:/usr/local/bin:/usr/bin:/bin${PATH:+:$PATH}"
+
+EXPOSE 2222
