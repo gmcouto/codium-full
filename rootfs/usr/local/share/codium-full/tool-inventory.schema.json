@@ -1,0 +1,137 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://codium-full.dev/schemas/tool-inventory.schema.json",
+  "title": "Codium Full AI tool provenance inventory",
+  "description": "Image-level provenance inventory recorded at build time by Plan 05-04, embedded at /usr/local/share/codium-full/tool-inventory.json. Per D-19/D-20/D-21 it is root-owned, world-readable, exact, atomic and free of credentials or mutable user paths.",
+  "type": "object",
+  "required": ["schema_version", "target", "tools"],
+  "additionalProperties": false,
+  "properties": {
+    "schema_version": {
+      "const": 1,
+      "description": "Versioned schema contract (D-20). Tool versions remain dynamic; only this version is fixed."
+    },
+    "target": {
+      "type": "object",
+      "description": "BuildKit target identity (D-11/D-14) so a verifier can assert per-image architecture parity.",
+      "required": ["os", "platform", "architecture"],
+      "additionalProperties": false,
+      "properties": {
+        "os": { "type": "string", "const": "linux" },
+        "platform": { "type": "string", "enum": ["linux/amd64", "linux/arm64"] },
+        "architecture": { "type": "string", "enum": ["amd64", "arm64"] }
+      }
+    },
+    "tools": {
+      "type": "array",
+      "description": "One normalized entry per logical tool; exactly eight unique entries required (D-04/D-07/D-12).",
+      "minItems": 8,
+      "items": {
+        "$ref": "#/$defs/toolEntry"
+      }
+    }
+  },
+  "$defs": {
+    "toolEntry": {
+      "type": "object",
+      "required": [
+        "name",
+        "distribution",
+        "requested",
+        "resolved_version",
+        "source",
+        "digest",
+        "architecture",
+        "commands",
+        "result"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "enum": [
+            "claude-code",
+            "openclaude",
+            "copilot",
+            "codex",
+            "opencode",
+            "cursor-agent",
+            "antigravity",
+            "herdr"
+          ]
+        },
+        "distribution": {
+          "type": "string",
+          "enum": ["npm", "standalone"]
+        },
+        "requested": {
+          "type": "object",
+          "description": "Version-free source identity captured from sources.json (D-03).",
+          "required": ["channel", "package_or_source"],
+          "additionalProperties": false,
+          "properties": {
+            "channel": { "type": "string", "enum": ["latest", "stable"] },
+            "package_or_source": { "type": "string" }
+          }
+        },
+        "resolved_version": { "type": "string" },
+        "source": {
+          "type": "object",
+          "description": "Public source URL(s) only. No credentials, tokens, or environment dumps (D-20).",
+          "required": ["url"],
+          "additionalProperties": false,
+          "properties": {
+            "url": { "type": "string", "format": "uri" },
+            "native": {
+              "type": "object",
+              "description": "Optional architecture-native payload URLs keyed by arch (npm optional packages / standalone assets).",
+              "additionalProperties": {
+                "type": "string",
+                "format": "uri"
+              }
+            }
+          }
+        },
+        "digest": {
+          "type": "object",
+          "description": "Explicitly distinguishes upstream-verified digests from observed hashes (D-10).",
+          "required": ["authority", "value"],
+          "additionalProperties": false,
+          "properties": {
+            "authority": {
+              "type": "string",
+              "enum": ["upstream_sri", "upstream_sha256", "upstream_sha512", "observed_sha256"]
+            },
+            "algorithm": {
+              "type": "string",
+              "enum": ["sha256", "sha512", "sri"]
+            },
+            "value": { "type": "string" }
+          }
+        },
+        "architecture": {
+          "type": "string",
+          "enum": ["amd64", "arm64"]
+        },
+        "commands": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string" },
+          "uniqueItems": true
+        },
+        "result": {
+          "type": "string",
+          "enum": ["installed", "acquired", "failed"]
+        }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "description": "Every entry must carry a target-correct architecture equal to the image target.",
+      "$comment": "Items cannot reference a sibling 'target'; verifiers cross-check tools[].architecture against target.architecture.",
+      "if": { "required": ["architecture"] },
+      "then": {}
+    }
+  ]
+}

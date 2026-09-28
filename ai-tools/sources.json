@@ -1,0 +1,197 @@
+{
+  "schema_version": 1,
+  "tools": {
+    "claude-code": {
+      "name": "claude-code",
+      "distribution": "npm",
+      "requested": {
+        "package": "@anthropic-ai/claude-code",
+        "channel": "latest"
+      },
+      "registry": {
+        "host": "registry.npmjs.org",
+        "tarball_prefix": "https://registry.npmjs.org/"
+      },
+      "commands": ["claude"],
+      "probe": {
+        "family": "version",
+        "args": ["--version"]
+      },
+      "digest_authority": "upstream_sri",
+      "native": {
+        "amd64": "@anthropic-ai/claude-code-linux-x64",
+        "arm64": "@anthropic-ai/claude-code-linux-arm64"
+      },
+      "vendor_toolchain_target": {
+        "amd64": "linux-x64",
+        "arm64": "linux-arm64"
+      }
+    },
+    "openclaude": {
+      "name": "openclaude",
+      "distribution": "npm",
+      "requested": {
+        "package": "@gitlawb/openclaude",
+        "channel": "latest"
+      },
+      "registry": {
+        "host": "registry.npmjs.org",
+        "tarball_prefix": "https://registry.npmjs.org/"
+      },
+      "commands": ["openclaude"],
+      "probe": {
+        "family": "version",
+        "args": ["--version"]
+      },
+      "digest_authority": "upstream_sri",
+      "native": {
+        "amd64": null,
+        "arm64": null
+      },
+      "vendor_toolchain_target": {
+        "amd64": "linux-x64",
+        "arm64": "linux-arm64"
+      }
+    },
+    "copilot": {
+      "name": "copilot",
+      "distribution": "npm",
+      "requested": {
+        "package": "@github/copilot",
+        "channel": "latest"
+      },
+      "registry": {
+        "host": "registry.npmjs.org",
+        "tarball_prefix": "https://registry.npmjs.org/"
+      },
+      "commands": ["copilot"],
+      "probe": {
+        "family": "version",
+        "args": ["version"]
+      },
+      "digest_authority": "upstream_sri",
+      "native": {
+        "amd64": "@github/copilot-linux-x64",
+        "arm64": "@github/copilot-linux-arm64"
+      },
+      "vendor_toolchain_target": {
+        "amd64": "linux",
+        "arm64": "linux"
+      }
+    },
+    "codex": {
+      "name": "codex",
+      "distribution": "npm",
+      "requested": {
+        "package": "@openai/codex",
+        "channel": "latest"
+      },
+      "registry": {
+        "host": "registry.npmjs.org",
+        "tarball_prefix": "https://registry.npmjs.org/"
+      },
+      "commands": ["codex"],
+      "probe": {
+        "family": "version",
+        "args": ["--version"]
+      },
+      "digest_authority": "upstream_sri",
+      "native": {
+        "amd64": "npm:@openai/codex@<version>-linux-x64",
+        "arm64": "npm:@openai/codex@<version>-linux-arm64"
+      },
+      "vendor_toolchain_target": {
+        "amd64": "linux-x64",
+        "arm64": "linux-arm64"
+      }
+    },
+    "opencode": {
+      "name": "opencode",
+      "distribution": "npm",
+      "requested": {
+        "package": "@opencode/cli",
+        "channel": "latest"
+      },
+      "registry": {
+        "host": "registry.npmjs.org",
+        "tarball_prefix": "https://registry.npmjs.org/"
+      },
+      "commands": ["opencode", "opencode2"],
+      "probe": {
+        "family": "version",
+        "args": ["--version"]
+      },
+      "digest_authority": "upstream_sri",
+      "native": {
+        "amd64": "@opencode/cli-linux-x64",
+        "arm64": "@opencode/cli-linux-arm64"
+      },
+      "vendor_toolchain_target": {
+        "amd64": "linux-x64",
+        "arm64": "linux-arm64"
+      }
+    },
+    "cursor-agent": {
+      "name": "cursor-agent",
+      "distribution": "standalone",
+      "endpoint": {
+        "host": "cursor.com",
+        "installer_url": "https://cursor.com/install",
+        "asset_host": "downloads.cursor.com",
+        "download_pattern": "https://downloads.cursor.com/lab/<version>/<os>/<arch>/agent-cli-package.tar.gz",
+        "os": "linux"
+      },
+      "commands": ["cursor-agent", "cursor", "agent"],
+      "probe": {
+        "family": "version",
+        "args": ["--version"]
+      },
+      "digest_authority": "observed_sha256",
+      "vendor_toolchain_target": {
+        "amd64": "x64",
+        "arm64": "arm64"
+      }
+    },
+    "antigravity": {
+      "name": "antigravity",
+      "distribution": "standalone",
+      "endpoint": {
+        "host": "antigravity-cli-auto-updater-974169037036.us-central1.run.app",
+        "manifest_pattern": "https://antigravity-cli-auto-updater-974169037036.us-central1.run.app/manifests/<manifest_arch>.json"
+      },
+      "commands": ["agy"],
+      "probe": {
+        "family": "version",
+        "args": ["--version"]
+      },
+      "digest_authority": "upstream_sha512",
+      "vendor_toolchain_target": {
+        "amd64": "linux_amd64",
+        "arm64": "linux_arm64"
+      }
+    },
+    "herdr": {
+      "name": "herdr",
+      "distribution": "standalone",
+      "endpoint": {
+        "host": "herdr.dev",
+        "manifest_url": "https://herdr.dev/latest.json"
+      },
+      "commands": ["herdr", "hrdr"],
+      "probe": {
+        "family": "version",
+        "args": ["--version"]
+      },
+      "digest_authority": "upstream_sha256",
+      "vendor_toolchain_target": {
+        "amd64": "linux-x86_64",
+        "arm64": "linux-aarch64"
+      }
+    }
+  },
+  "allowed_registry_hosts": ["registry.npmjs.org"],
+  "allowed_architectures": ["amd64", "arm64"],
+  "forbidden_channels": ["next", "canary", "nightly", "beta", "dev"],
+  "npm_install_path_env": "NPM_BIN",
+  "npm_install_path_image": "/usr/bin/npm"
+}
