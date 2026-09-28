@@ -118,6 +118,55 @@ RUN case "${TARGETARCH}" in \
     && ln -sf /usr/local/go/bin/* /usr/local/bin/ \
     && su -s /bin/bash abc -c "go version | grep -F 'go${GO_VERSION}'"
 
+# ---------------------------------------------------------------------------
+# Rolling AI CLI acquisition layer (Phase 5, Plan 05-04)
+#
+# Consumes the pre-resolved candidate bundle and the exact source identity /
+# release-policy data that are part of the Docker build context but NOT tracked
+# in git (D-03). All acquisition and validation happen here, at build time
+# (D-15); nothing downloads, installs, or self-updates at runtime.
+#
+# A dedicated AI_TOOL_SELECTION build arg lets CI build narrower slices
+# (tracer / npm-only) for fast iteration while the default `all` produces the
+# complete eight-tool contract image.
+# ---------------------------------------------------------------------------
+ARG AI_TOOL_SELECTION=all
+
+# The candidate bundle may be absent in a context that only builds the static
+# base; the acquisition step below only runs when a real candidate is supplied.
+COPY .build/ai-tools/candidate-resolution.json /opt/codium-ai/candidate-resolution.json
+COPY ai-tools/sources.json ai-tools/release-policy.json /opt/codium-ai/
+COPY rootfs/usr/local/share/codium-full/licenses/AI-TOOLS-NOTICES.json /opt/codium-ai/licenses/
+
+# Phase 5 build helpers (resolution/validation/identity/policy/acquisition).
+COPY scripts/prepare-ai-tools-resolution.sh \
+     scripts/resolve-ai-tools.sh \
+     scripts/validate-ai-tool-resolution.sh \
+     scripts/verify-npm-package-identities.sh \
+     scripts/check-ai-tool-release-policy.sh \
+     scripts/acquire-ai-tools.sh \
+     scripts/inspect-ai-tool-payloads.sh \
+     /usr/local/share/codium-full/scripts/
+
+# Ensure readelf/gpg are present (building blocks for target-chain + D-27).
+RUN apt-get update && apt-get install -y --no-install-recommends binutils gpg \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/* \
+    && if [ ! -f /opt/codium-ai/candidate-resolution.json ]; then \
+        echo "codium: no candidate bundle supplied; skipping AI tool acquisition" ; \
+    else \
+        NPM_BIN=/usr/bin/npm /usr/local/share/codium-full/scripts/verify-npm-package-identities.sh \
+            --sources /opt/codium-ai/sources.json \
+            --resolution /opt/codium-ai/candidate-resolution.json && \
+        /usr/local/share/codium-full/scripts/check-ai-tool-release-policy.sh \
+            --mode local-technical --resolution /opt/codium-ai/candidate-resolution.json && \
+        /usr/local/share/codium-full/scripts/acquire-ai-tools.sh \
+            --target-arch "${TARGETARCH}" \
+            --selection "${AI_TOOL_SELECTION}" \
+            --bundle /opt/codium-ai/candidate-resolution.json \
+            && rm -rf /tmp/* /var/tmp/*; \
+    fi
+
 
 ENV PNPM_HOME="/config/.local/share/pnpm" \
     GOROOT="/usr/local/go" \
