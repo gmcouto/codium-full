@@ -1,0 +1,17 @@
+#!/command/with-contenv bash
+set -euo pipefail
+PRODUCT_JSON=/app/code-server/lib/vscode/product.json
+[ -f "$PRODUCT_JSON" ] || exit 0
+MS='{"serviceUrl":"https://marketplace.visualstudio.com/_apis/public/gallery","itemUrl":"https://marketplace.visualstudio.com/items","cacheUrl":"https://vscode.blob.core.windows.net/gallery/index"}'
+OPEN='{"serviceUrl":"https://open-vsx.org/vscode/gallery","itemUrl":"https://open-vsx.org/vscode/item"}'
+mode="${EXTENSIONS_GALLERY:-default}"
+apply() { jq --argjson gallery "$1" '. + {extensionsGallery:$gallery}' "$PRODUCT_JSON" > /tmp/product.json && mv /tmp/product.json "$PRODUCT_JSON"; }
+case "$mode" in
+  ""|default|ms|microsoft) apply "$MS" ;;
+  disabled|none|false|0) jq 'del(.extensionsGallery)' "$PRODUCT_JSON" > /tmp/product.json && mv /tmp/product.json "$PRODUCT_JSON" ;;
+  open-vsx|openvsx|open_vsx) apply "$OPEN" ;;
+  \{*)
+    if jq empty <<<"$mode" >/dev/null 2>&1; then apply "$mode"; else printf '%s\n' '[init-codium-gallery] invalid EXTENSIONS_GALLERY JSON; using Microsoft Marketplace' >&2; apply "$MS"; fi
+    ;;
+  *) printf '%s\n' "[init-codium-gallery] unknown EXTENSIONS_GALLERY mode; using Microsoft Marketplace" >&2; apply "$MS" ;;
+esac
