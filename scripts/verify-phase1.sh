@@ -16,9 +16,12 @@ id abc >/dev/null 2>&1 || {
     exit 1
 }
 
-# Assert /config is not polluted with preinstalled binary toolchains
-if [ -d /config ] && [ "$(find /config -mindepth 1 -maxdepth 1 | wc -l)" -gt 0 ]; then
-    echo "WARNING: /config is not empty at build time"
+# This must run against the uninitialized image with no /config mount and with
+# the image entrypoint overridden. Runtime persistence is a separate test.
+if find /config -mindepth 1 -maxdepth 1 -print -quit | grep -q .; then
+    echo "ERROR: image contains build-time files under /config" >&2
+    find /config -mindepth 1 -maxdepth 1 -print >&2
+    exit 1
 fi
 
 # 2. Node.js 22 LTS (RUN-01, D-03)
@@ -58,10 +61,13 @@ if [ "${RUSTUP_HOME:-}" != "/opt/rust/rustup" ]; then
     echo "ERROR: RUSTUP_HOME is not set to /opt/rust/rustup (got: ${RUSTUP_HOME:-unset})" >&2
     exit 1
 fi
-if [ "${CARGO_HOME:-}" = "/opt/rust/cargo" ]; then
-    echo "ERROR: CARGO_HOME must not be globally set to /opt/rust/cargo to prevent write permission issues for user 'abc'" >&2
-    exit 1
-fi
+case "${CARGO_HOME-}" in
+    ""|/config/.cargo) ;;
+    *)
+        echo "ERROR: CARGO_HOME must be unset or /config/.cargo (got: ${CARGO_HOME})" >&2
+        exit 1
+        ;;
+esac
 
 # 5. Go Toolchain (RUN-02, D-06)
 echo "[5/9] Checking Go toolchain and user execution..."
@@ -69,8 +75,12 @@ if [ ! -x /usr/local/go/bin/go ]; then
     echo "ERROR: Go binary not found at /usr/local/go/bin/go" >&2
     exit 1
 fi
-su -s /bin/bash abc -c 'go version' || {
-    echo "ERROR: go command execution failed as user 'abc'" >&2
+if [ "$(readlink -f "$(command -v go)")" != /usr/local/go/bin/go ]; then
+    echo "ERROR: go does not resolve to /usr/local/go/bin/go (got: $(command -v go))" >&2
+    exit 1
+fi
+su -s /bin/bash abc -c 'test "$(readlink -f "$(command -v go)")" = /usr/local/go/bin/go && go version | grep -F " go1.24.1 "' || {
+    echo "ERROR: expected Go 1.24.1 system binary is not executable as user 'abc'" >&2
     exit 1
 }
 
@@ -96,17 +106,19 @@ for lib in "${REQUIRED_LIBS[@]}"; do
 done
 
 # 7. Docker Client Tooling (RUN-04, D-07)
-echo "[7/9] Checking Docker client tooling (CLI, Compose, Buildx)..."
-docker --version || {
-    echo "ERROR: docker CLI not available" >&2
+# Phase 1 verifies installation only. The test harness intentionally does not
+# mount a Docker socket, so daemon authorization is outside this test's scope.
+echo "[7/9] Checking Docker client tooling as user 'abc' (daemon access not tested)..."
+su -s /bin/bash abc -c 'docker --version' || {
+    echo "ERROR: docker CLI not available to user 'abc'" >&2
     exit 1
 }
-docker compose version || {
-    echo "ERROR: docker compose CLI plugin not available" >&2
+su -s /bin/bash abc -c 'docker compose version' || {
+    echo "ERROR: docker compose CLI plugin not available to user 'abc'" >&2
     exit 1
 }
-docker buildx version || {
-    echo "ERROR: docker buildx CLI plugin not available" >&2
+su -s /bin/bash abc -c 'docker buildx version' || {
+    echo "ERROR: docker buildx CLI plugin not available to user 'abc'" >&2
     exit 1
 }
 
