@@ -25,8 +25,22 @@ case "$1" in
         esac
         ;;
     install|i)
-        if [ "$#" -eq 1 ]; then exec /usr/bin/pnpm install; fi
-        shift; exec /usr/bin/pnpm add "$@"
+        shift
+        has_package=0
+        after_options=0
+        for arg do
+            if [ "$after_options" -eq 1 ]; then
+                has_package=1
+                break
+            fi
+            case "$arg" in
+                --) after_options=1 ;;
+                -*) ;;
+                *) has_package=1; break ;;
+            esac
+        done
+        if [ "$has_package" -eq 0 ]; then exec /usr/bin/pnpm install "$@"; fi
+        exec /usr/bin/pnpm add "$@"
         ;;
     uninstall|remove|rm|r|unlink) shift; exec /usr/bin/pnpm remove "$@" ;;
     update|up) shift; exec /usr/bin/pnpm update "$@" ;;
