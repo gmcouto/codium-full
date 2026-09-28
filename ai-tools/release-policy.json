@@ -1,0 +1,111 @@
+{
+  "schema_version": 1,
+  "effective_date": "2026-09-28",
+  "review_policy": "Evidence is reviewed at candidate build time; every record carries finding_date and expiry. External-release eligibility requires affirmative, independently-sourced re-approval that is fresh, tool-exact, and non-repository-authored (D-24).",
+  "tools": {
+    "openclaude": {
+      "logical_name": "openclaude",
+      "status": "blocked",
+      "status_reason": "Upstream LICENSE disclaims authorization to distribute Anthropic's underlying proprietary source; the project states it does not hold Anthropic's authorization to redistribute their proprietary code.",
+      "distribution": "npm",
+      "source_url": "https://github.com/Gitlawb/openclaude/blob/main/LICENSE",
+      "terms_url": "https://github.com/Gitlawb/openclaude/blob/main/LICENSE",
+      "finding_date": "2026-09-28",
+      "expiry": "2027-09-28",
+      "evidence_hash": "research-05-2026-09-28-openclaude-license",
+      "required_notices": ["LICENSE"],
+      "external_approval": null
+    },
+    "cursor-agent": {
+      "logical_name": "cursor-agent",
+      "status": "blocked",
+      "status_reason": "Cursor Terms of Service grant a personal use license but prohibit reproducing or copying the Service; no redistribution grant for the agent distribution was identified.",
+      "distribution": "standalone",
+      "source_url": "https://cursor.com/terms-of-service",
+      "terms_url": "https://cursor.com/terms-of-service",
+      "finding_date": "2026-09-28",
+      "expiry": "2027-09-28",
+      "evidence_hash": "research-05-2026-09-28-cursor-tos",
+      "required_notices": [],
+      "external_approval": null
+    },
+    "antigravity": {
+      "logical_name": "antigravity",
+      "status": "blocked",
+      "status_reason": "Google's general software terms are personal/non-assignable and prohibit copying or distribution; Antigravity's additional terms incorporate those terms, so redistribution is not affirmatively granted.",
+      "distribution": "standalone",
+      "source_url": "https://policies.google.com/terms#toc-software",
+      "terms_url": "https://antigravity.google/terms",
+      "finding_date": "2026-09-28",
+      "expiry": "2027-09-28",
+      "evidence_hash": "research-05-2026-09-28-antigravity-terms",
+      "required_notices": [],
+      "external_approval": null
+    },
+    "claude-code": {
+      "logical_name": "claude-code",
+      "status": "unresolved",
+      "status_reason": "Current official redistribution status could not be affirmatively established from research; the natural binary uses a signed release manifest and the npm wrapper's license field is not a redistribution grant.",
+      "distribution": "npm",
+      "source_url": "https://code.claude.com/docs/en/setup",
+      "terms_url": "https://github.com/anthropics/claude-code/blob/main/README.md",
+      "finding_date": "2026-09-28",
+      "expiry": "2027-09-28",
+      "evidence_hash": "research-05-2026-09-28-claude-code-terms",
+      "required_notices": ["LICENSE", "NOTICE"],
+      "external_approval": null
+    },
+    "copilot": {
+      "logical_name": "copilot",
+      "status": "conditional",
+      "status_reason": "Copilot CLI redistribution is conditionally permitted only when the package remains unmodified and is distributed as part of an application; conditions must be preserved or external release fails closed.",
+      "distribution": "npm",
+      "source_url": "https://github.com/github/copilot-cli/blob/main/LICENSE.md",
+      "terms_url": "https://github.com/github/copilot-cli/blob/main/LICENSE.md",
+      "finding_date": "2026-09-28",
+      "expiry": "2027-09-28",
+      "evidence_hash": "research-05-2026-09-28-copilot-license",
+      "required_notices": ["LICENSE.md"],
+      "external_approval": null
+    },
+    "codex": {
+      "logical_name": "codex",
+      "status": "approved-with-obligations",
+      "status_reason": "Apache-2.0 licensed; redistribution permitted with notice/attribution obligations preserved (Apache/MIT notices mandatory).",
+      "distribution": "npm",
+      "source_url": "https://github.com/openai/codex",
+      "terms_url": "https://github.com/openai/codex/blob/main/LICENSE",
+      "finding_date": "2026-09-28",
+      "expiry": "2027-09-28",
+      "evidence_hash": "research-05-2026-09-28-codex-license",
+      "required_notices": ["LICENSE"], 
+      "external_approval": null
+    },
+    "opencode": {
+      "logical_name": "opencode",
+      "status": "approved-with-obligations",
+      "status_reason": "MIT-licensed; redistribution permitted with attribution notice preserved.",
+      "distribution": "npm",
+      "source_url": "https://github.com/sst/opencode",
+      "terms_url": "https://github.com/sst/opencode/blob/dev/LICENSE",
+      "finding_date": "2026-09-28",
+      "expiry": "2027-09-28",
+      "evidence_hash": "research-05-2026-09-28-opencode-license",
+      "required_notices": ["LICENSE"],
+      "external_approval": null
+    },
+    "herdr": {
+      "logical_name": "herdr",
+      "status": "approved-with-obligations",
+      "status_reason": "Open-source license with attribution/notice obligations preserved; redistribution grant identified.",
+      "distribution": "standalone",
+      "source_url": "https://github.com/herdrdev/herdr",
+      "terms_url": "https://github.com/herdrdev/herdr",
+      "finding_date": "2026-09-28",
+      "expiry": "2027-09-28",
+      "evidence_hash": "research-05-2026-09-28-herdr-license",
+      "required_notices": ["LICENSE"],
+      "external_approval": null
+    }
+  }
+}

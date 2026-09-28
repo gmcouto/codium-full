@@ -1,0 +1,123 @@
+{
+  "schema_version": 1,
+  "purpose": "Embedded license/notice source inventory and preservation obligations for every shipped AI tool. This manifest does NOT constitute a redistribution approval; external release eligibility is derived by scripts/check-ai-tool-release-policy.sh from the release-policy.json approval records (D-24, D-20).",
+  "tools": [
+    {
+      "distribution": "npm",
+      "source_url": "https://github.com/anthropics/claude-code/blob/main/README.md",
+      "terms_url": "https://code.claude.com/docs/en/setup",
+      "license_hash": "research-05-2026-09-28-claude-code-terms",
+      "disposition": "unresolved: no affirmative redistribution grant identified; notice files to be preserved",
+      "required_files": [
+        "LICENSE",
+        "NOTICE"
+      ],
+      "required_actions": [
+        "Preserve Anthropic notices verbatim if redistributed after approval is obtained."
+      ],
+      "note": "status=unresolved",
+      "name": "claude-code"
+    },
+    {
+      "distribution": "npm",
+      "source_url": "https://github.com/Gitlawb/openclaude/blob/main/LICENSE",
+      "terms_url": "https://github.com/Gitlawb/openclaude/blob/main/LICENSE",
+      "license_hash": "research-05-2026-09-28-openclaude-license",
+      "disposition": "blocked: upstream disclaims authorization to distribute underlying proprietary source",
+      "required_files": [
+        "LICENSE"
+      ],
+      "required_actions": [
+        "Do not redistribute; local technical use only."
+      ],
+      "note": "status=blocked",
+      "name": "openclaude"
+    },
+    {
+      "distribution": "npm",
+      "source_url": "https://github.com/github/copilot-cli/blob/main/LICENSE.md",
+      "terms_url": "https://github.com/github/copilot-cli/blob/main/LICENSE.md",
+      "license_hash": "research-05-2026-09-28-copilot-license",
+      "disposition": "conditional: permitted unmodified as part of an application; conditions must hold",
+      "required_files": [
+        "LICENSE.md"
+      ],
+      "required_actions": [
+        "Preserve LICENSE.md unmodified; distribution remains unmodified."
+      ],
+      "note": "status=conditional",
+      "name": "copilot"
+    },
+    {
+      "distribution": "npm",
+      "source_url": "https://github.com/openai/codex",
+      "terms_url": "https://github.com/openai/codex/blob/main/LICENSE",
+      "license_hash": "research-05-2026-09-28-codex-license",
+      "disposition": "approved-with-obligations: Apache-2.0 with notice/attribution preservation",
+      "required_files": [
+        "LICENSE"
+      ],
+      "required_actions": [
+        "Include Apache-2.0 notice."
+      ],
+      "note": "status=approved-with-obligations",
+      "name": "codex"
+    },
+    {
+      "distribution": "npm",
+      "source_url": "https://github.com/sst/opencode",
+      "terms_url": "https://github.com/sst/opencode/blob/dev/LICENSE",
+      "license_hash": "research-05-2026-09-28-opencode-license",
+      "disposition": "approved-with-obligations: MIT with attribution preservation",
+      "required_files": [
+        "LICENSE"
+      ],
+      "required_actions": [
+        "Include MIT attribution notice."
+      ],
+      "note": "status=approved-with-obligations",
+      "name": "opencode"
+    },
+    {
+      "distribution": "standalone",
+      "source_url": "https://cursor.com/terms-of-service",
+      "terms_url": "https://cursor.com/terms-of-service",
+      "license_hash": "research-05-2026-09-28-cursor-tos",
+      "disposition": "blocked: personal use grant, reproduction/copying of the Service prohibited",
+      "required_files": [],
+      "required_actions": [
+        "Do not redistribute; local technical use only."
+      ],
+      "note": "status=blocked",
+      "name": "cursor-agent"
+    },
+    {
+      "distribution": "standalone",
+      "source_url": "https://policies.google.com/terms#toc-software",
+      "terms_url": "https://antigravity.google/terms",
+      "license_hash": "research-05-2026-09-28-antigravity-terms",
+      "disposition": "blocked: personal/non-assignable license prohibiting copying or distribution",
+      "required_files": [],
+      "required_actions": [
+        "Do not redistribute; local technical use only."
+      ],
+      "note": "status=blocked",
+      "name": "antigravity"
+    },
+    {
+      "distribution": "standalone",
+      "source_url": "https://github.com/herdrdev/herdr",
+      "terms_url": "https://github.com/herdrdev/herdr",
+      "license_hash": "research-05-2026-09-28-herdr-license",
+      "disposition": "approved-with-obligations: open-source license with notice preservation",
+      "required_files": [
+        "LICENSE"
+      ],
+      "required_actions": [
+        "Include license/attribution notice."
+      ],
+      "note": "status=approved-with-obligations",
+      "name": "herdr"
+    }
+  ]
+}
