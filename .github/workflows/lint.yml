@@ -1,0 +1,42 @@
+name: Static PR Linting
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  static-lint:
+    name: Fast Static Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Lint Dockerfile (Hadolint)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: Dockerfile
+          config: .hadolint.yaml
+
+      - name: Lint Shell Scripts (ShellCheck)
+        run: |
+          shellcheck --version
+          shellcheck -x scripts/*.sh rootfs/etc/profile.d/*.sh rootfs/usr/local/bin/npm rootfs/usr/local/bin/npx rootfs/usr/local/bin/yarn
+
+      - name: Lint GitHub Workflows (actionlint)
+        run: |
+          bash <(curl -fsSL https://raw.githubusercontent.com/rhysd/actionlint/main/scripts/download-actionlint.bash)
+          ./actionlint -color
+
+      - name: Validate Docker Compose Configuration
+        run: |
+          TEST_PASSWORD=mockpassword docker compose -f docker-compose.test.yml config -q
+
+      - name: Validate JSON Configuration Files
+        run: |
+          find ai-tools rootfs -name '*.json' -exec jq empty {} +
