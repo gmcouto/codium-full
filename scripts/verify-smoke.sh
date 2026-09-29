@@ -265,8 +265,71 @@ echo "  ✓ Root SSH login is strictly rejected"
 
 if [ "$SKIP_IN_CONTAINER" -eq 1 ]; then
     echo "Skipping dedicated in-container smoke checks (--skip-in-container enabled)."
-    echo "=== Service Smoke Verification PASSED ==="
-    exit 0
+else
+    echo "=== Running Dedicated In-Container Smoke Checks as user abc ==="
+
+    # 1. Language runtimes and core dev tools (TEST-03)
+    echo "Verifying language runtimes and developer utilities as user abc (TEST-03)..."
+    docker exec -u abc "${CONTAINER_ID}" bash -lc '
+        set -euo pipefail
+        [ "$(id -u)" -eq 1000 ] || { echo "ERROR: In-container check not running as user abc (id 1000)" >&2; exit 1; }
+
+        node --version >/dev/null
+        python3 --version >/dev/null
+        rustc --version >/dev/null
+        cargo --version >/dev/null
+        go version >/dev/null
+        pkg-config --version >/dev/null
+        docker --version >/dev/null
+        gh --version >/dev/null
+        rg --version >/dev/null
+        fd --version >/dev/null
+        fzf --version >/dev/null
+        jq --version >/dev/null
+    '
+    echo "  ✓ All language runtimes and core dev tools execute as user abc (TEST-03)"
+
+    # 2. Rolling AI CLIs and aliases against tool-inventory.json (TEST-03)
+    echo "Verifying 8 AI coding tools across 12 aliases as user abc (TEST-03)..."
+    docker exec -u abc "${CONTAINER_ID}" bash -lc '
+        set -euo pipefail
+        [ "$(id -u)" -eq 1000 ] || { echo "ERROR: In-container check not running as user abc (id 1000)" >&2; exit 1; }
+        [ -f /usr/local/share/codium-full/tool-inventory.json ] || { echo "ERROR: tool-inventory.json missing" >&2; exit 1; }
+
+        ALIASES=(claude openclaude copilot codex opencode opencode2 cursor-agent cursor agent agy herdr hrdr)
+        for cmd in "${ALIASES[@]}"; do
+            out=$("$cmd" --version 2>&1 | head -n 1)
+            [ -n "$out" ] || { echo "ERROR: Command $cmd returned empty version" >&2; exit 1; }
+        done
+    '
+    echo "  ✓ All 8 AI tools across 12 aliases pass non-root --version execution (TEST-03)"
+
+    # 3. Shell integrations and pnpm shims (TEST-04)
+    echo "Verifying pnpm precedence and compatibility shims via verify-phase4.sh (TEST-04)..."
+    docker exec -u abc "${CONTAINER_ID}" /scripts/verify-phase4.sh
+    echo "  ✓ pnpm precedence, shim translation, and fail-closed diagnostics verified (TEST-04)"
+
+    echo "Verifying zoxide and fzf shell integrations in interactive bash session as abc (TEST-04)..."
+    docker exec -u abc "${CONTAINER_ID}" bash -i -c 'type z >/dev/null && type zi >/dev/null && (type __fzf_select__ >/dev/null 2>&1 || type fzf-file-widget >/dev/null 2>&1 || type _fzf_file_completion >/dev/null 2>&1 || type _fzf_setup_completion >/dev/null 2>&1)' >/dev/null 2>&1
+    echo "  ✓ zoxide and fzf shell integrations verified in interactive bash (TEST-04)"
+
+    # 4. Multiplexer exclusion (TEST-05)
+    echo "Verifying strict absence of legacy multiplexers tmux and screen as user abc (TEST-05)..."
+    docker exec -u abc "${CONTAINER_ID}" bash -lc '! command -v tmux && ! command -v screen'
+    echo "  ✓ tmux and screen confirmed absent across PATH (TEST-05)"
 fi
 
-echo "=== External Service Probes PASSED ==="
+# 5. Provenance inventory export
+if [ -n "$EXPORT_INVENTORY" ]; then
+    echo "Exporting provenance inventory from container to ${EXPORT_INVENTORY}..."
+    mkdir -p "$(dirname "$EXPORT_INVENTORY")"
+    docker cp "${CONTAINER_ID}:/usr/local/share/codium-full/tool-inventory.json" "$EXPORT_INVENTORY"
+    if ! jq -e '.tools | length == 8' "$EXPORT_INVENTORY" >/dev/null 2>&1; then
+        echo "ERROR: Exported tool inventory does not contain exactly 8 valid tools" >&2
+        exit 1
+    fi
+    echo "  ✓ Provenance inventory successfully exported and verified (8 tools)"
+fi
+
+echo "=== All verify-smoke.sh probes passed successfully ==="
+exit 0
