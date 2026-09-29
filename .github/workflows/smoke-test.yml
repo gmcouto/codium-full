@@ -1,0 +1,84 @@
+name: Multi-Platform Smoke Testing
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke-test-matrix:
+    name: Smoke Test (${{ matrix.platform }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux/amd64
+            arch: amd64
+          - platform: linux/arm64
+            arch: arm64
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Prepare AI tools candidate resolution
+        run: |
+          ./scripts/prepare-ai-tools-resolution.sh
+
+      - name: Build candidate image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: ${{ matrix.platform }}
+          load: true
+          tags: codium-full:candidate-${{ matrix.arch }}
+
+      - name: Run smoke test harness
+        run: |
+          ./scripts/verify-smoke.sh \
+            --image codium-full:candidate-${{ matrix.arch }} \
+            --platform ${{ matrix.platform }} \
+            --export-inventory /tmp/inventory-${{ matrix.arch }}.json
+
+      - name: Upload provenance inventory artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: inventory-${{ matrix.arch }}
+          path: /tmp/inventory-${{ matrix.arch }}.json
+
+  architecture-parity-gate:
+    name: Cross-Architecture Parity Gate
+    needs: smoke-test-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Download amd64 inventory artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: inventory-amd64
+          path: /tmp/inventories/inventory-amd64
+
+      - name: Download arm64 inventory artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: inventory-arm64
+          path: /tmp/inventories/inventory-arm64
+
+      - name: Assert cross-architecture inventory parity
+        run: |
+          ./scripts/verify-smoke.sh \
+            --compare-inventories \
+            /tmp/inventories/inventory-amd64/inventory-amd64.json \
+            /tmp/inventories/inventory-arm64/inventory-arm64.json
