@@ -326,11 +326,22 @@ install_npm_tools() {
         native_specs+=("${spec}")
     done < <(jq -r --arg arch "${TARGETARCH}" '[.tools[] | select(.distribution=="npm") | .native_payloads[$arch][] | .spec] | .[]' "${BUNDLE}")
 
-    if [ "${#native_specs[@]}" -gt 0 ]; then
-        /usr/bin/npm install --global --ignore-scripts --prefix "${NPM_PREFIX}" "${native_specs[@]}" \
-            >/dev/null 2>&1 \
-            || fail A010 "pre-ensuring native npm optional packages failed"
-    fi
+    for spec in "${native_specs[@]}"; do
+        echo "acquire-ai-tools: pre-ensuring native optional package: ${spec}" >&2
+        local retry_count=0
+        while [ "${retry_count}" -lt 3 ]; do
+            if /usr/bin/npm install --global --ignore-scripts --prefix "${NPM_PREFIX}" "${spec}" \
+                --fetch-retries=5 --fetch-retry-factor=2 --no-audit --no-fund --no-update-notifier; then
+                break
+            fi
+            retry_count=$((retry_count + 1))
+            echo "acquire-ai-tools: retry ${retry_count}/3 for ${spec}..." >&2
+            sleep 2
+        done
+        if [ "${retry_count}" -ge 3 ]; then
+            fail A010 "pre-ensuring native npm optional packages failed: ${spec}"
+        fi
+    done
 
     # Install the exact wrapper versions (lifecycle scripts enabled).
     local wrapper_specs=()
@@ -340,10 +351,19 @@ install_npm_tools() {
     done < <(jq -r '[.tools[] | select(.distribution=="npm") | "\(.requested.package)@\(.resolved_version)"] | .[]' "${BUNDLE}")
 
     if [ "${#wrapper_specs[@]}" -gt 0 ]; then
-        # Fail if the lock/project would change identity: strict prefix install.
-        if ! /usr/bin/npm install --global --prefix "${NPM_PREFIX}" "${wrapper_specs[@]}" \
-                --no-audit --no-fund --no-update-notifier \
-                >/dev/null 2>&1; then
+        echo "acquire-ai-tools: installing wrapper packages: ${wrapper_specs[*]}" >&2
+        local retry_count=0
+        while [ "${retry_count}" -lt 3 ]; do
+            if /usr/bin/npm install --global --prefix "${NPM_PREFIX}" "${wrapper_specs[@]}" \
+                --fetch-retries=5 --fetch-retry-factor=2 \
+                --no-audit --no-fund --no-update-notifier; then
+                break
+            fi
+            retry_count=$((retry_count + 1))
+            echo "acquire-ai-tools: retry ${retry_count}/3 for wrapper packages..." >&2
+            sleep 2
+        done
+        if [ "${retry_count}" -ge 3 ]; then
             fail A011 "native npm install of exact wrappers failed"
         fi
     fi
