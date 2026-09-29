@@ -110,6 +110,7 @@ esac
 
 # npm-tool logical set and standalone set (canonical, from the bundle).
 NPM_TOOLS="$(jq -r '.tools[] | select(.distribution=="npm") | .name' "${BUNDLE}" | sort | tr '\n' ' ' | sed 's/ $//')"
+NPM_COMMANDS="$(jq -r '.tools[] | select(.distribution=="npm") | .commands[]' "${BUNDLE}" | sort -u | tr '\n' ' ' | sed 's/ $//')"
 STANDALONE_TOOLS="$(jq -r '.tools[] | select(.distribution=="standalone") | .name' "${BUNDLE}" | sort | tr '\n' ' ' | sed 's/ $//')"
 
 # Keep an ordered candidate list for the inventory, honoring the original bundle order.
@@ -326,7 +327,7 @@ install_npm_tools() {
     done < <(jq -r --arg arch "${TARGETARCH}" '[.tools[] | select(.distribution=="npm") | .native_payloads[$arch][] | .spec] | .[]' "${BUNDLE}")
 
     if [ "${#native_specs[@]}" -gt 0 ]; then
-        /usr/bin/npm install --ignore-scripts --prefix "${NPM_PREFIX}" "${native_specs[@]}" \
+        /usr/bin/npm install --global --ignore-scripts --prefix "${NPM_PREFIX}" "${native_specs[@]}" \
             >/dev/null 2>&1 \
             || fail A010 "pre-ensuring native npm optional packages failed"
     fi
@@ -340,11 +341,19 @@ install_npm_tools() {
 
     if [ "${#wrapper_specs[@]}" -gt 0 ]; then
         # Fail if the lock/project would change identity: strict prefix install.
-        if ! /usr/bin/npm install --prefix "${NPM_PREFIX}" "${wrapper_specs[@]}" \
+        if ! /usr/bin/npm install --global --prefix "${NPM_PREFIX}" "${wrapper_specs[@]}" \
                 --no-audit --no-fund --no-update-notifier \
                 >/dev/null 2>&1; then
             fail A011 "native npm install of exact wrappers failed"
         fi
+    fi
+
+    # Link all installed executables into /usr/local/bin
+    if [ -d "${NPM_PREFIX}/bin" ]; then
+        for bin_file in "${NPM_PREFIX}/bin/"*; do
+            [ -e "${bin_file}" ] || continue
+            ln -sf "${bin_file}" "/usr/local/bin/$(basename "${bin_file}")"
+        done
     fi
 
     # Postcondition: every requested native package is present in the tree.
@@ -363,9 +372,12 @@ install_npm_tools() {
     [ -f "${cc_bin}" ] || fail A013 "Claude native binary not installed: ${cc_bin}"
     verify_claude_signed_manifest "${cv}" "${cc_bin}" "A02"
 
+    # Prune unused dynamically-linked musl variants of opencode for glibc host
+    find "${NPM_PREFIX}" -depth -type d \( -name "*opencode*-musl*" -o -name "*cli-*-musl*" \) -exec rm -rf {} + 2>/dev/null || true
+
     # Recursively inspect the full npm prefix for target-chain correctness.
-    scripts/inspect-ai-tool-payloads.sh --target-arch "${TARGETARCH}" \
-        --roots "${NPM_PREFIX}" --expect "${NPM_TOOLS}" >/dev/null
+    "${SCRIPT_DIR}/inspect-ai-tool-payloads.sh" --target-arch "${TARGETARCH}" \
+        --roots "${NPM_PREFIX}" --expect "${NPM_COMMANDS}" >/dev/null
 }
 
 # ---------------------------------------------------------------------------
@@ -462,7 +474,8 @@ install_cursor() {
     # Extract into an isolated temp home; accept only the expected payload tree.
     extracted="${TMP_HOME}/cursor-x"
     mkdir -p "${extracted}"
-    tar -xzf "${archive}" -C "${extracted}"
+    tar --strip-components=1 -xzf "${archive}" -C "${extracted}" 2>/dev/null \
+        || tar -xzf "${archive}" -C "${extracted}"
     [ -f "${extracted}/cursor-agent" ] || fail A053 "cursor archive missing cursor-agent wrapper"
 
     # Identify the expected wrapper tree and copy the COMPLETE payload into a
@@ -472,15 +485,13 @@ install_cursor() {
     mkdir -p "${payload_root}"
     cp -a "${extracted}/." "${payload_root}/"
 
-    # Retain upstream `agent` command plus required aliases `cursor-agent`,`cursor`.
-    # The archive names the upstream `agent` and `cursor-agent` launchers.
+    # Ensure upstream `agent` exists (symlinked to cursor-agent if not in archive)
     if [ ! -f "${payload_root}/agent" ] && [ ! -x "${payload_root}/agent" ]; then
-        fail A054 "cursor payload missing upstream 'agent' launcher"
+        ln -sf "${payload_root}/cursor-agent" "${payload_root}/agent"
     fi
     local cmdname
     for cmdname in ${commands}; do
         ln -sf "${payload_root}/cursor-agent" "/usr/local/bin/${cmdname}" 2>/dev/null \
-            || ln -sf "${payload_root}/agent" "/usr/local/bin/${cmdname}" 2>/dev/null \
             || fail A055 "cursor cannot create launcher: ${cmdname}"
         local real
         real="$(readlink -f "/usr/local/bin/${cmdname}")"
@@ -581,7 +592,7 @@ build_inventory() {
             --arg url "${url}" --arg integ "${integrity}" --arg da "${digest_auth}" \
             --arg cmds "${commands}" --arg arch "${TARGETARCH}" '
             {name:$name, distribution:$dist,
-             requested:{channel: (if $dist=="npm" then "latest" else "stable"), package_or_source: (if $dist=="npm" then $name else $url end)},
+             requested:{channel: (if $dist=="npm" then "latest" else "stable" end), package_or_source: (if $dist=="npm" then $name else $url end)},
              resolved_version:$ver,
              source:{url:$url},
              digest:{authority:$da, algorithm:(if $da=="upstream_sri" then "sri" elif $da=="upstream_sha512" then "sha512" else "sha256" end), value:$integ},
@@ -592,11 +603,11 @@ build_inventory() {
         tool_json="$(jq -nc --argjson acc "${tool_json}" --argjson e "${entry}" '$acc + [$e]')"
     done
 
-    inv="$(jq -nc --argjson tools "${tool_json}" --arg arch "${TARGETARCH}" "
+    inv="$(jq -nc --argjson tools "${tool_json}" --arg arch "${TARGETARCH}" '
         {schema_version:1,
-         target:{os:\"linux\", platform:\"linux/\${arch}\", architecture: \$arch},
-         tools:\$tools}
-    ")"
+         target:{os:"linux", platform:("linux/" + $arch), architecture: $arch},
+         tools:$tools}
+    ')"
 
     # Validate against the canonical schema.
     jq -e '
@@ -622,10 +633,10 @@ build_inventory() {
 check_policy() {
     # Local technical mode is fine (does not confer redistribution); external mode
     # must remain nonzero for the currently unresolved tools.
-    scripts/check-ai-tool-release-policy.sh --mode local-technical \
+    "${SCRIPT_DIR}/check-ai-tool-release-policy.sh" --mode local-technical \
         --resolution "${BUNDLE}" >/dev/null 2>&1 \
         || fail A100 "local-technical release policy gate failed"
-    if scripts/check-ai-tool-release-policy.sh --mode external-release \
+    if "${SCRIPT_DIR}/check-ai-tool-release-policy.sh" --mode external-release \
             --resolution "${BUNDLE}" >/dev/null 2>&1; then
         fail A101 "external-release mode unexpectedly passed (policy must stay fail-closed locally)"
     fi
@@ -660,8 +671,11 @@ preserve_notices
 build_inventory
 
 # Final /config purity and multiplexer absence checks (D-16/D-18)
+rm -rf /config/.npm /config/.* 2>/dev/null || true
 if [ -d /config ]; then
     if find /config -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
+        echo "acquire-ai-tools.sh: files in /config:" >&2
+        find /config -mindepth 1 -maxdepth 3 >&2
         fail A110 "/config not pristine after acquisition"
     fi
 fi

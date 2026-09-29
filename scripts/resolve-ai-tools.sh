@@ -167,11 +167,13 @@ resolve_npm_tool() {
         nlock="[]"
         if [ -n "${native_map}" ]; then
             # Materialize any version placeholder (codex alias form) and, for the
-            # codex alias "npm:@openai/codex@<ver>-linux-x64", strip the npm: prefix
+            # codex alias "@openai/codex-linux-x64@npm:@openai/codex@<ver>-linux-x64", strip the npm: prefix
             # only for the registry "view" lookup while retaining it as install spec.
             local native_spec view_spec
             native_spec="$(printf '%s' "${native_map}" | sed "s#<version>#${resolved}#g")"
-            if [[ "${native_spec}" == npm:* ]]; then
+            if [[ "${native_spec}" == *@npm:* ]]; then
+                view_spec="${native_spec#*@npm:}"
+            elif [[ "${native_spec}" == npm:* ]]; then
                 view_spec="${native_spec#npm:}"
             else
                 view_spec="${native_spec}"
@@ -182,12 +184,16 @@ resolve_npm_tool() {
             ndist="$("${NPM_BIN}" view "${view_spec}" dist --json 2>/dev/null)"
             ntarball="$(jq -r '.tarball' <<<"${ndist}")"
             nintegrity="$(jq -r '.integrity' <<<"${ndist}")"
-            [ -n "${npkg}" ] || npkg="${view_spec}"
+            if [[ "${native_spec}" == *@npm:* ]]; then
+                npkg="${native_spec%%@npm:*}"
+            else
+                [ -n "${npkg}" ] || npkg="${view_spec}"
+            fi
             if [ -z "${nver}" ] || ! printf '%s' "${ntarball}" | grep -Eq '^https://registry\.npmjs\.org/' || ! printf '%s' "${nintegrity}" | grep -Eq '^sha512-[A-Za-z0-9+/=]+$'; then
                 echo "resolve-ai-tools.sh: invalid native metadata for ${npkg} on ${arch}" >&2
                 exit 1
             fi
-            nlock="$(jq -nc --arg spec "${view_spec}" --arg pkg "${npkg}" --arg ver "${nver}" --arg url "${ntarball}" --arg sri "${nintegrity}" '[{name:$pkg, spec:$spec, version:$ver, resolved:$url, integrity:$sri}]')"
+            nlock="$(jq -nc --arg spec "${native_spec}" --arg pkg "${npkg}" --arg ver "${nver}" --arg url "${ntarball}" --arg sri "${nintegrity}" '[{name:$pkg, spec:$spec, version:$ver, resolved:$url, integrity:$sri}]')"
         fi
         entry_native="$(jq --arg a "${arch}" --argjson nl "${nlock}" '. + {($a):$nl}' <<<"${entry_native}")"
     done

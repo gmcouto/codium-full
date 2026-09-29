@@ -128,6 +128,8 @@ structural_validate() {
 # Live identity gate: candidate + official-source linkage + registry agreement.
 # ---------------------------------------------------------------------------
 verify_live() {
+    export HOME="$(mktemp -d)"
+    export npm_config_cache="${HOME}/.npm"
     structural_validate "${RESOLUTION}"
     echo "=== npm package identity gate (D-25) ==="
     for t in ${NPM_TOOLS}; do
@@ -140,9 +142,15 @@ verify_live() {
         official="${PKG_OFFICIAL[$t]}"; expect="${PKG_EXPECT[$t]}"
 
         local doc
-        doc="$(curl --proto '=https' --tlsv1.2 -fsSL --max-time "${FETCH_BOUND}" "${official}" 2>/dev/null || echo "")"
+        for attempt in 1 2 3 4 5; do
+            doc="$(curl --proto '=https' --tlsv1.2 -fsSL --max-time "${FETCH_BOUND}" "${official}" 2>/dev/null || echo "")"
+            if [ -n "${doc}" ] && grep -F "${expect}" <<< "${doc}" >/dev/null 2>&1; then
+                break
+            fi
+            sleep 1
+        done
         [ -n "${doc}" ] || fail I003 "no official-source content for ${pkg} (${official})"
-        printf '%s' "${doc}" | grep -Fq "${expect}" || fail I003 "official source no longer names '${expect}' for ${t} (${official})"
+        grep -F "${expect}" <<< "${doc}" >/dev/null 2>&1 || fail I003 "official source no longer names '${expect}' for ${t} (${official})"
 
         # Current channel version; reject prerelease.
         local cur_ver
@@ -169,7 +177,11 @@ verify_live() {
         for a in amd64 arm64; do
             while IFS= read -r spec; do
                 [ -n "${spec}" ] || continue
-                "${NPM_BIN}" view "${spec}" version >/dev/null 2>&1 || fail I016 "${pkg} native spec no longer resolvable on ${a}: ${spec}"
+                local view_spec="${spec}"
+                if [[ "${spec}" == *@npm:* ]]; then
+                    view_spec="${spec#*@npm:}"
+                fi
+                "${NPM_BIN}" view "${view_spec}" version >/dev/null 2>&1 || fail I016 "${pkg} native spec no longer resolvable on ${a}: ${spec}"
             done <<<"$(jq -r --arg a "${a}" ".tools[] | select(.name==\"${t}\") | .native_payloads.${a}[].spec" "${RESOLUTION}")"
         done
 

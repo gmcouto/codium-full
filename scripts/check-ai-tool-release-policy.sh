@@ -24,7 +24,17 @@ set -euo pipefail
 SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd -- "${SCRIPT_DIR}/.." && pwd)"
 POLICY="${PROJECT_ROOT}/ai-tools/release-policy.json"
+if [ ! -f "${POLICY}" ] && [ -f "/opt/codium-ai/release-policy.json" ]; then
+    POLICY="/opt/codium-ai/release-policy.json"
+fi
 NOTICES="${PROJECT_ROOT}/rootfs/usr/local/share/codium-full/licenses/AI-TOOLS-NOTICES.json"
+if [ ! -f "${NOTICES}" ]; then
+    if [ -f "/usr/local/share/codium-full/licenses/AI-TOOLS-NOTICES.json" ]; then
+        NOTICES="/usr/local/share/codium-full/licenses/AI-TOOLS-NOTICES.json"
+    elif [ -f "/opt/codium-ai/licenses/AI-TOOLS-NOTICES.json" ]; then
+        NOTICES="/opt/codium-ai/licenses/AI-TOOLS-NOTICES.json"
+    fi
+fi
 
 MODE=""
 RESOLUTION=""
