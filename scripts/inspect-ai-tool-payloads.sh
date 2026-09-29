@@ -160,8 +160,7 @@ check_dependencies() {
 }
 
 check_shell_launcher() {
-    # Follow a #! /bin/sh|bash launcher's first non-comment exec line; if it
-    # execs an absolute path under /root or /config, fail (D-16/T-05-15).
+    # Follow a #! /bin/sh|bash launcher; if it references an absolute path under /root or /config, fail (D-16/T-05-15).
     local f="$1" line target
     while IFS= read -r line; do
         line="$(printf '%s' "${line}" | sed 's/^[[:space:]]*//; s/#.*//')"
@@ -170,9 +169,6 @@ check_shell_launcher() {
         if [ -n "${target}" ]; then
             fail P005 "launcher resolves under ${target%%/*}: $f"
         fi
-        # Only the first action line is inspected; deeper static analysis is
-        # deliberately skipped to avoid false positives in wrapper scripts.
-        return 0
     done < <(tail -n +2 "$f")
 }
 

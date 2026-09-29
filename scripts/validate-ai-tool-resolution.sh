@@ -243,12 +243,8 @@ jq -e '[.tools[] | select(.name=="cursor-agent") | .native_payloads[] ] | all(.[
 for t in claude-code openclaude copilot codex opencode; do
     if ! printf '%s\n' "${TOOL_NAMES}" | grep -qx "${t}"; then continue; fi
     jq -e --arg t "${t}" '[.tools[] | select(.name==$t and .distribution=="npm") | .resolved_version] | length == 1' "${CANDIDATE}" >/dev/null 2>&1 \
-        || fail E020B "npm tool ${t} must resolve to exactly one version"
+        || fail E020 "npm tool ${t} must resolve to exactly one version"
 done
-
-# Semantic-version equality across arch: for npm tools resolved_version is the
-# single wrapper version, so verify each npm tool has ONE distinct version record.
-jq -e '[.tools[] | select(.distribution=="npm") | .resolved_version] | length == (unique | length)' "${CANDIDATE}" >/dev/null 2>&1 || fail E020 "npm tools must each resolve to exactly one version; divergence detected"
 
 # --------------------------------------------------------------------------
 # Reject secret-like / environment-dump / user-path fields anywhere.

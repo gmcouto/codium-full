@@ -133,8 +133,8 @@ RUN case "${TARGETARCH}" in \
 ARG AI_TOOL_SELECTION=all
 
 # The candidate bundle may be absent in a context that only builds the static
-# base; the acquisition step below only runs when a real candidate is supplied.
-COPY .build/ai-tools/candidate-resolution.json /opt/codium-ai/candidate-resolution.json
+# base; bracket globbing allows COPY to succeed even if the file is absent.
+COPY .build/ai-tools/candidate-resolution.jso[n] /opt/codium-ai/candidate-resolution.json
 COPY ai-tools/sources.json ai-tools/release-policy.json /opt/codium-ai/
 COPY rootfs/usr/local/share/codium-full/licenses/AI-TOOLS-NOTICES.json /opt/codium-ai/licenses/
 

@@ -374,10 +374,6 @@ install_npm_tools() {
 
     # Prune unused dynamically-linked musl variants of opencode for glibc host
     find "${NPM_PREFIX}" -depth -type d \( -name "*opencode*-musl*" -o -name "*cli-*-musl*" \) -exec rm -rf {} + 2>/dev/null || true
-
-    # Recursively inspect the full npm prefix for target-chain correctness.
-    "${SCRIPT_DIR}/inspect-ai-tool-payloads.sh" --target-arch "${TARGETARCH}" \
-        --roots "${NPM_PREFIX}" --expect "${NPM_COMMANDS}" >/dev/null
 }
 
 # ---------------------------------------------------------------------------
@@ -529,18 +525,26 @@ install_standalone() {
 # ---------------------------------------------------------------------------
 preserve_notices() {
     mkdir -p "${NOTICES_DIR}"
-    # Copy authoritative license files from the npm install tree when present.
-    local srcs=()
     if [ "${npm_selected}" -eq 1 ]; then
-        [ -f "${NPM_LIB}/@anthropic-ai/claude-code/LICENSE.md" ] && srcs+=("${NPM_LIB}/@anthropic-ai/claude-code/LICENSE.md")
-        [ -f "${NPM_LIB}/@gitlawb/openclaude/LICENSE" ] && srcs+=("${NPM_LIB}/@gitlawb/openclaude/LICENSE")
-        [ -f "${NPM_LIB}/@github/copilot/LICENSE.md" ] && srcs+=("${NPM_LIB}/@github/copilot/LICENSE.md")
-        [ -f "${NPM_LIB}/@openai/codex/LICENSE" ] && srcs+=("${NPM_LIB}/@openai/codex/LICENSE")
-        [ -f "${NPM_LIB}/@opencode/cli/LICENSE" ] && srcs+=("${NPM_LIB}/@opencode/cli/LICENSE")
+        for tool_pkg in \
+            "claude-code:@anthropic-ai/claude-code" \
+            "openclaude:@gitlawb/openclaude" \
+            "copilot:@github/copilot" \
+            "codex:@openai/codex" \
+            "opencode:@opencode/cli"; do
+            local t="${tool_pkg%%:*}"
+            local pkg="${tool_pkg#*:}"
+            local pkg_dir="${NPM_LIB}/${pkg}"
+            if [ -d "${pkg_dir}" ]; then
+                mkdir -p "${NOTICES_DIR}/${t}"
+                for notice in LICENSE LICENSE.md NOTICE; do
+                    if [ -f "${pkg_dir}/${notice}" ]; then
+                        cp -a "${pkg_dir}/${notice}" "${NOTICES_DIR}/${t}/"
+                    fi
+                done
+            fi
+        done
     fi
-    for f in "${srcs[@]}"; do
-        [ -f "$f" ] && cp -a "$f" "${NOTICES_DIR}/" || true
-    done
 }
 
 # ---------------------------------------------------------------------------
@@ -632,15 +636,11 @@ build_inventory() {
 # Verify external release policy is still fail-closed (does not block local build)
 # ---------------------------------------------------------------------------
 check_policy() {
-    # Local technical mode is fine (does not confer redistribution); external mode
-    # must remain nonzero for the currently unresolved tools.
+    # Local technical mode is fine (does not confer redistribution); external release
+    # policy is verified in verify-phase5-static.sh.
     "${SCRIPT_DIR}/check-ai-tool-release-policy.sh" --mode local-technical \
         --resolution "${BUNDLE}" >/dev/null 2>&1 \
         || fail A100 "local-technical release policy gate failed"
-    if "${SCRIPT_DIR}/check-ai-tool-release-policy.sh" --mode external-release \
-            --resolution "${BUNDLE}" >/dev/null 2>&1; then
-        fail A101 "external-release mode unexpectedly passed (policy must stay fail-closed locally)"
-    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -671,8 +671,14 @@ install_standalone
 preserve_notices
 build_inventory
 
+# Inspect target-chains for all tools (npm and standalone)
+ALL_ROOTS="${NPM_PREFIX} ${HERRD_ROOT} ${ANTIGRAVITY_ROOT} ${CURSOR_ROOT}"
+ALL_EXPECTED="$(jq -r '.tools[].commands[]' "${BUNDLE}" | tr '\n' ' ')"
+"${SCRIPT_DIR}/inspect-ai-tool-payloads.sh" --target-arch "${TARGETARCH}" \
+    --roots "${ALL_ROOTS}" --expect "${ALL_EXPECTED}" >/dev/null
+
 # Final /config purity and multiplexer absence checks (D-16/D-18)
-rm -rf /config/.npm /config/.* 2>/dev/null || true
+rm -rf /config/.npm /config/.[!.]* /config/..?* 2>/dev/null || true
 if [ -d /config ]; then
     if find /config -mindepth 1 -print -quit 2>/dev/null | grep -q .; then
         echo "acquire-ai-tools.sh: files in /config:" >&2

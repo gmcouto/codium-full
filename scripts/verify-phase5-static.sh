@@ -83,7 +83,7 @@ trap 'rm -rf "${ST_TMP}"' EXIT
 # 6. Dockerfile wiring & no-startup-install policy
 # ---------------------------------------------------------------------------
 # Must not contain runtime acquisition or startup downloads in s6 services
-if grep -Eiq 'npm install.*@latest|curl.*install\.sh|wget.*install\.sh' "${PROJECT_ROOT}/rootfs/etc/s6-overlay/"* 2>/dev/null; then
+if grep -r -Eiq 'npm install.*@latest|curl.*install\.sh|wget.*install\.sh' "${PROJECT_ROOT}/rootfs/etc/s6-overlay/" 2>/dev/null; then
     fail S050 "found dynamic install commands inside s6-overlay service definitions"
 fi
 
