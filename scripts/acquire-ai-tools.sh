@@ -484,6 +484,7 @@ install_cursor() {
     rm -rf "${payload_root}"
     mkdir -p "${payload_root}"
     cp -a "${extracted}/." "${payload_root}/"
+    chown -R root:root "${payload_root}"
 
     # Ensure upstream `agent` exists (symlinked to cursor-agent if not in archive)
     if [ ! -f "${payload_root}/agent" ] && [ ! -x "${payload_root}/agent" ]; then
