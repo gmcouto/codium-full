@@ -502,6 +502,16 @@ install_cursor() {
     cp -a "${extracted}/." "${payload_root}/"
     chown -R root:root "${payload_root}"
 
+    # Prune non-target prebuilds bundled in upstream cursor payload
+    case "${TARGETARCH}" in
+        amd64)
+            find "${payload_root}" -depth -type d \( -name "linux-arm*" -o -name "darwin*" -o -name "win32*" \) -exec rm -rf {} + 2>/dev/null || true
+            ;;
+        arm64)
+            find "${payload_root}" -depth -type d \( -name "linux-x64" -o -name "linux-ia32" -o -name "darwin*" -o -name "win32*" \) -exec rm -rf {} + 2>/dev/null || true
+            ;;
+    esac
+
     # Ensure upstream `agent` exists (symlinked to cursor-agent if not in archive)
     if [ ! -f "${payload_root}/agent" ] && [ ! -x "${payload_root}/agent" ]; then
         ln -sf "${payload_root}/cursor-agent" "${payload_root}/agent"
@@ -724,6 +734,18 @@ for t in ${ORDERED_TOOLS}; do
 done
 
 if [ -n "${INSPECT_ROOTS}" ]; then
+    # Prune foreign architecture prebuilds (e.g. tree-sitter prebuilds for other OS/arch)
+    for r in ${INSPECT_ROOTS}; do
+        case "${TARGETARCH}" in
+            amd64)
+                find "${r}" -depth -type d \( -name "linux-arm*" -o -name "darwin*" -o -name "win32*" \) -exec rm -rf {} + 2>/dev/null || true
+                ;;
+            arm64)
+                find "${r}" -depth -type d \( -name "linux-x64" -o -name "linux-ia32" -o -name "darwin*" -o -name "win32*" \) -exec rm -rf {} + 2>/dev/null || true
+                ;;
+        esac
+    done
+
     "${SCRIPT_DIR}/inspect-ai-tool-payloads.sh" --target-arch "${TARGETARCH}" \
         --roots "${INSPECT_ROOTS# }" --expect "${INSPECT_EXPECTED# }" >/dev/null
 fi
