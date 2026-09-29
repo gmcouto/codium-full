@@ -42,14 +42,22 @@ done
 [ -n "${RESOLUTION}" ] || RESOLUTION="${PROJECT_ROOT}/.build/ai-tools/candidate-resolution.json"
 [ -f "${SOURCES}" ] || { echo "verify-npm: sources missing: ${SOURCES}" >&2; exit 1; }
 
-NPM_BIN="${NPM_BIN:-/usr/bin/npm}"
-if [ -z "${NPM_BIN:-}" ] || [ "${NPM_BIN}" = "/usr/local/bin/npm" ] || [ ! -x "${NPM_BIN}" ]; then
-    if command -v npm >/dev/null 2>&1 && [ "$(command -v npm)" != "/usr/local/bin/npm" ]; then
-        NPM_BIN="$(command -v npm)"
-    else
-        echo "verify-npm: no native npm (Phase 4 shim prohibited)" >&2
-        exit 1
-    fi
+is_codium_shim() {
+    local target="$1"
+    [ -n "$target" ] && [ -f "$target" ] && grep -q 'codium-shim' "$target" 2>/dev/null
+}
+
+if [ -n "${NPM_BIN:-}" ] && [ -x "${NPM_BIN}" ] && ! is_codium_shim "${NPM_BIN}"; then
+    : # Keep user-specified NPM_BIN
+elif command -v npm-native >/dev/null 2>&1 && ! is_codium_shim "$(command -v npm-native)"; then
+    NPM_BIN="$(command -v npm-native)"
+elif [ -x /usr/bin/npm ] && ! is_codium_shim /usr/bin/npm; then
+    NPM_BIN="/usr/bin/npm"
+elif command -v npm >/dev/null 2>&1 && ! is_codium_shim "$(command -v npm)"; then
+    NPM_BIN="$(command -v npm)"
+else
+    echo "verify-npm: no native npm (Phase 4 shim prohibited)" >&2
+    exit 1
 fi
 NPM_BIN_DIR="$(dirname -- "${NPM_BIN}")"
 export PATH="${NPM_BIN_DIR}:/usr/local/bin:/usr/bin:/bin"

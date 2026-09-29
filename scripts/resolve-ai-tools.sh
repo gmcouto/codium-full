@@ -31,14 +31,22 @@ done
 
 # Prefer the image native npm binary; fall back to PATH for local/dev runs.
 # The Phase 4 shim reference lives at /usr/local/bin/npm which must never be used.
-NPM_BIN="${NPM_BIN:-${npm_install_path_image:-/usr/bin/npm}}"
-if [ ! -x "${NPM_BIN}" ]; then
-    if command -v npm >/dev/null 2>&1 && [ "$(command -v npm)" != "/usr/local/bin/npm" ]; then
-        NPM_BIN="$(command -v npm)"
-    else
-        echo "resolve-ai-tools.sh: uknown NPM_BIN/Builtin npm; no native npm found" >&2
-        exit 1
-    fi
+is_codium_shim() {
+    local target="$1"
+    [ -n "$target" ] && [ -f "$target" ] && grep -q 'codium-shim' "$target" 2>/dev/null
+}
+
+if [ -n "${NPM_BIN:-}" ] && [ -x "${NPM_BIN}" ] && ! is_codium_shim "${NPM_BIN}"; then
+    : # Keep user-specified NPM_BIN
+elif command -v npm-native >/dev/null 2>&1 && ! is_codium_shim "$(command -v npm-native)"; then
+    NPM_BIN="$(command -v npm-native)"
+elif [ -x /usr/bin/npm ] && ! is_codium_shim /usr/bin/npm; then
+    NPM_BIN="/usr/bin/npm"
+elif command -v npm >/dev/null 2>&1 && ! is_codium_shim "$(command -v npm)"; then
+    NPM_BIN="$(command -v npm)"
+else
+    echo "resolve-ai-tools.sh: unknown NPM_BIN/Builtin npm; no native npm found" >&2
+    exit 1
 fi
 NPM_BIN="$(command -v "${NPM_BIN}" || true)"
 if [ -z "${NPM_BIN}" ] || [ ! -x "${NPM_BIN}" ]; then
