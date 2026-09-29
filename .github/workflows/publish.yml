@@ -19,6 +19,8 @@ jobs:
   smoke-test-gate:
     name: Multi-Platform Smoke Test Gate
     uses: ./.github/workflows/smoke-test.yml
+    with:
+      ref: ${{ inputs.tag || github.ref }}
 
   publish-ghcr:
     name: Build & Publish Multi-Arch Image to GHCR
@@ -27,6 +29,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag || github.ref }}
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -67,7 +71,7 @@ jobs:
           flavor: |
             latest=false
           tags: |
-            type=semver,pattern=v{{version}},value=${{ steps.target-tag.outputs.tag }}
+            type=semver,pattern={{version}},prefix=v,value=${{ steps.target-tag.outputs.tag }}
             type=semver,pattern={{version}},value=${{ steps.target-tag.outputs.tag }}
 
       - name: Build and push multi-arch image

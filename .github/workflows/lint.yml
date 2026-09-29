@@ -26,7 +26,8 @@ jobs:
       - name: Lint Shell Scripts (ShellCheck)
         run: |
           shellcheck --version
-          shellcheck -x scripts/*.sh rootfs/etc/profile.d/*.sh rootfs/usr/local/bin/npm rootfs/usr/local/bin/npx rootfs/usr/local/bin/yarn
+          DISABLE_CODES=$(grep '^disable=' .shellcheckrc | cut -d= -f2)
+          shellcheck -e "${DISABLE_CODES}" -x scripts/*.sh rootfs/etc/profile.d/*.sh rootfs/usr/local/bin/npm rootfs/usr/local/bin/npx rootfs/usr/local/bin/yarn
 
       - name: Lint GitHub Workflows (actionlint)
         run: |

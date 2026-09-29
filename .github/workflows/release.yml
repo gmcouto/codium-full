@@ -1,5 +1,6 @@
 name: Release Authoring
 
+# Manual release authoring pipeline: generates release notes, git tag, and GitHub Release
 on:
   workflow_dispatch:
     inputs:
