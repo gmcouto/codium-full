@@ -545,6 +545,15 @@ preserve_notices() {
             fi
         done
     fi
+    if [ "${standalone_selected}" -eq 1 ]; then
+        # Preserve Herdr license notice if herdr was selected
+        if printf '%s\n' "${ORDERED_TOOLS}" | grep -qw "herdr"; then
+            local herdr_dir="${NOTICES_DIR}/herdr"
+            mkdir -p "${herdr_dir}"
+            fetch_bounded "https://raw.githubusercontent.com/herdrdev/herdr/master/LICENSE" \
+                "${herdr_dir}/LICENSE" 'https://raw.githubusercontent.com/herdrdev/herdr/*' 2>/dev/null || true
+        fi
+    fi
 }
 
 # ---------------------------------------------------------------------------
@@ -671,11 +680,33 @@ install_standalone
 preserve_notices
 build_inventory
 
-# Inspect target-chains for all tools (npm and standalone)
-ALL_ROOTS="${NPM_PREFIX} ${HERRD_ROOT} ${ANTIGRAVITY_ROOT} ${CURSOR_ROOT}"
-ALL_EXPECTED="$(jq -r '.tools[].commands[]' "${BUNDLE}" | tr '\n' ' ')"
-"${SCRIPT_DIR}/inspect-ai-tool-payloads.sh" --target-arch "${TARGETARCH}" \
-    --roots "${ALL_ROOTS}" --expect "${ALL_EXPECTED}" >/dev/null
+# Inspect target-chains for selected tools
+INSPECT_ROOTS=""
+if [ "${npm_selected}" -eq 1 ] && [ -d "${NPM_PREFIX}" ]; then
+    INSPECT_ROOTS="${INSPECT_ROOTS} ${NPM_PREFIX}"
+fi
+if [ "${standalone_selected}" -eq 1 ]; then
+    for sroot in "${HERRD_ROOT}" "${ANTIGRAVITY_ROOT}" "${CURSOR_ROOT}"; do
+        if [ -d "${sroot}" ]; then
+            INSPECT_ROOTS="${INSPECT_ROOTS} ${sroot}"
+        fi
+    done
+fi
+INSPECT_EXPECTED=""
+for t in ${ORDERED_TOOLS}; do
+    dtype="$(jq -r --arg t "$t" '.tools[] | select(.name==$t) | .distribution' "${BUNDLE}")"
+    case "${dtype}" in
+        npm) [ "${npm_selected}" -eq 1 ] || continue ;;
+        standalone) [ "${standalone_selected}" -eq 1 ] || continue ;;
+    esac
+    tcmds="$(jq -r --arg t "$t" '.tools[] | select(.name==$t) | .commands[]?' "${BUNDLE}" || true)"
+    INSPECT_EXPECTED="${INSPECT_EXPECTED} ${tcmds}"
+done
+
+if [ -n "${INSPECT_ROOTS}" ]; then
+    "${SCRIPT_DIR}/inspect-ai-tool-payloads.sh" --target-arch "${TARGETARCH}" \
+        --roots "${INSPECT_ROOTS# }" --expect "${INSPECT_EXPECTED# }" >/dev/null
+fi
 
 # Final /config purity and multiplexer absence checks (D-16/D-18)
 rm -rf /config/.npm /config/.[!.]* /config/..?* 2>/dev/null || true
