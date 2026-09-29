@@ -289,13 +289,3 @@ echo "TOOL-02: OK (standalone source allowlists and binary architectures)"
 echo "TOOL-05: OK (inventory schema contract and provenance invariants)"
 echo "TOOL-06: OK (multi-arch parity and release policy gates)"
 exit 0
-
-echo "Negative fixtures passed: ${st_pass}/${st_total}"
-[ "${st_pass}" -eq "${st_total}" ] || fail S060 "not all negative fixtures passed"
-
-echo "=== Phase 5 Static Verification: ALL CHECKS PASSED ==="
-echo "TOOL-01: OK (resolve-once and official package contracts)"
-echo "TOOL-02: OK (standalone source allowlists and binary architectures)"
-echo "TOOL-05: OK (inventory schema contract and provenance invariants)"
-echo "TOOL-06: OK (multi-arch parity and release policy gates)"
-exit 0

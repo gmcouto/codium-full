@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# shellcheck disable=SC2016
 set -euo pipefail
 
 printf '%s\n' '=== Phase 4 pnpm Compatibility Verification ==='
@@ -63,7 +64,7 @@ make_package packages/yarn-add yarn-add-dependency
 make_package packages/yarn-upgrade yarn-upgrade-dependency
 mkdir -p packages/dlx-tool/bin
 printf '%s\n' '{"name":"codium-dlx-tool","version":"1.0.0","bin":{"codium-dlx-tool":"bin/run"}}' > packages/dlx-tool/package.json
-printf '#!/bin/sh\nprintf "dlx-exec:%s" "$*"\n' > packages/dlx-tool/bin/run
+printf '%s\n' '#!/bin/sh' 'printf "dlx-exec:%s" "$*"' > packages/dlx-tool/bin/run
 chmod +x packages/dlx-tool/bin/run
 (cd packages/dlx-tool && pnpm pack --pack-destination /tmp >/dev/null)
 dlx_archive=/tmp/codium-dlx-tool-1.0.0.tgz
@@ -159,7 +160,8 @@ check_shell 'bash -l -c '\''printf %s "$PATH"'\'''
 if command -v ssh >/dev/null 2>&1 && timeout 1 bash -c '</dev/tcp/127.0.0.1/2222' 2>/dev/null; then
     client_key="$fixture/ssh_client_ed25519"
     ssh-keygen -q -t ed25519 -N '' -f "$client_key"
-    mkdir -p -m 0700 /config/.ssh
+    mkdir -p /config/.ssh
+    chmod 0700 /config/.ssh
     if [[ -f "$authorized_keys" ]]; then
         cp -a "$authorized_keys" "$fixture/authorized_keys"
         restore_authorized_keys=1
