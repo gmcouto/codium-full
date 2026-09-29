@@ -39,4 +39,5 @@ jobs:
 
       - name: Validate JSON Configuration Files
         run: |
+          find . -maxdepth 1 -name '*.json' -exec jq empty {} +
           find ai-tools rootfs -name '*.json' -exec jq empty {} +

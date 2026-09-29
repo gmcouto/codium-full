@@ -56,7 +56,7 @@ echo "  ✓ Compose configuration clean"
 echo "=== [5/5] JSON Syntax Validation ==="
 while IFS= read -r -d '' jf; do
     jq empty "$jf" || { echo "ERROR: Invalid JSON in $jf" >&2; exit 1; }
-done < <(find ai-tools rootfs -name '*.json' -print0)
+done < <(find . -maxdepth 1 -name '*.json' -print0; find ai-tools rootfs -name '*.json' -print0)
 echo "  ✓ JSON configurations clean"
 
 echo "=== ALL STATIC CHECKS PASSED ==="
