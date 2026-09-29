@@ -18,9 +18,160 @@ Options:
   --ssh-port <SSH_PORT>     Host port mapping for SSH 2222 (default: 12222 or $SSH_PORT / $TEST_SSH_PORT)
   --skip-in-container       Skip dedicated in-container verification suites
   --export-inventory <PATH> Export tool-inventory.json to specified host path
+  --compare-inventories <FILE1> <FILE2>
+                            Compare two tool-inventory.json files for version and distribution parity
+  --dual-platform           Build and verify candidate images for linux/amd64 and linux/arm64, then assert parity
   -h, --help                Show this help message
 EOF
     exit 0
+}
+
+validate_inventory_file() {
+    local file="$1"
+    local label="${2:-Inventory}"
+
+    if [ ! -f "$file" ]; then
+        echo "ERROR: ${label} file does not exist: $file" >&2
+        return 1
+    fi
+
+    if ! jq empty "$file" >/dev/null 2>&1; then
+        echo "ERROR: ${label} file is not valid JSON: $file" >&2
+        return 1
+    fi
+
+    if ! jq -e '
+        .schema_version == 1 and
+        .target.os == "linux" and
+        (.target.architecture == "amd64" or .target.architecture == "arm64") and
+        (.target.platform == ("linux/" + .target.architecture)) and
+        (.tools | type == "array") and
+        (.tools | length == 8) and
+        ([.tools[].name] | length == (unique | length)) and
+        all(.tools[];
+            (.name as $n | ["claude-code","openclaude","copilot","codex","opencode","cursor-agent","antigravity","herdr"] | index($n) != null) and
+            (.distribution == "npm" or .distribution == "standalone") and
+            (.resolved_version | type == "string" and length > 0) and
+            (.commands | type == "array" and length > 0) and
+            (.result == "installed" or .result == "acquired")
+        )
+    ' "$file" >/dev/null 2>&1; then
+        echo "ERROR: ${label} file failed structural validation against tool-inventory schema: $file" >&2
+        return 1
+    fi
+
+    local schema_path="${PROJECT_ROOT}/rootfs/usr/local/share/codium-full/tool-inventory.schema.json"
+    if [ ! -f "$schema_path" ]; then
+        schema_path="/usr/local/share/codium-full/tool-inventory.schema.json"
+    fi
+    if [ -f "$schema_path" ]; then
+        if command -v python3 >/dev/null 2>&1 && python3 -c "import jsonschema" >/dev/null 2>&1; then
+            if ! python3 -c "
+import json, sys, jsonschema
+with open(sys.argv[1]) as sf:
+    schema = json.load(sf)
+with open(sys.argv[2]) as df:
+    data = json.load(df)
+jsonschema.validate(instance=data, schema=schema)
+" "$schema_path" "$file" 2>/dev/null; then
+                echo "ERROR: ${label} file failed jsonschema validation against $schema_path: $file" >&2
+                return 1
+            fi
+        fi
+    fi
+
+    return 0
+}
+
+compare_inventories() {
+    local file1="$1"
+    local file2="$2"
+
+    echo "=== Comparing Tool Provenance Inventories ==="
+    echo "Inventory 1: ${file1}"
+    echo "Inventory 2: ${file2}"
+
+    if ! validate_inventory_file "$file1" "Inventory 1"; then
+        return 1
+    fi
+    if ! validate_inventory_file "$file2" "Inventory 2"; then
+        return 1
+    fi
+
+    local norm1 norm2
+    norm1=$(jq -S '.tools | map({name, resolved_version, distribution}) | sort_by(.name)' "$file1")
+    norm2=$(jq -S '.tools | map({name, resolved_version, distribution}) | sort_by(.name)' "$file2")
+
+    if [ "$norm1" = "$norm2" ]; then
+        echo "✓ Parity confirmed: 100% version and distribution agreement across all 8 AI tools."
+        return 0
+    else
+        echo "ERROR: Cross-architecture version or distribution drift detected between inventories! (TEST-06)" >&2
+        diff -u <(echo "$norm1") <(echo "$norm2") >&2 || true
+        return 1
+    fi
+}
+
+run_dual_platform() {
+    echo "=== Running Dual-Platform Candidate Smoke Testing Orchestration (TEST-06) ==="
+
+    local candidate_bundle="${PROJECT_ROOT}/.build/ai-tools/candidate-resolution.json"
+    if [ ! -f "$candidate_bundle" ]; then
+        echo "Candidate resolution bundle absent at ${candidate_bundle}; preparing..."
+        "${SCRIPT_DIR}/prepare-ai-tools-resolution.sh"
+    fi
+
+    echo "Building linux/amd64 candidate image..."
+    docker buildx build --platform linux/amd64 -t codium-full:candidate-amd64 --load "${PROJECT_ROOT}"
+
+    echo "Building linux/arm64 candidate image..."
+    docker buildx build --platform linux/arm64 -t codium-full:candidate-arm64 --load "${PROJECT_ROOT}"
+
+    local tmp_dir
+    tmp_dir="$(mktemp -d /tmp/dual-smoke-XXXXXX)"
+    trap 'rm -rf "${tmp_dir}" 2>/dev/null || true' EXIT INT TERM
+    local inv_amd64="${tmp_dir}/inventory-amd64.json"
+    local inv_arm64="${tmp_dir}/inventory-arm64.json"
+
+    local extra_args=()
+    if [ "$SKIP_IN_CONTAINER" -eq 1 ]; then
+        extra_args+=(--skip-in-container)
+    fi
+
+    echo "Executing smoke test for linux/amd64 candidate..."
+    "${SCRIPT_DIR}/verify-smoke.sh" \
+        --image codium-full:candidate-amd64 \
+        --platform linux/amd64 \
+        --port "${HOST_PORT}" \
+        --ssh-port "${HOST_SSH_PORT}" \
+        "${extra_args[@]}" \
+        --export-inventory "${inv_amd64}"
+
+    echo "Executing smoke test for linux/arm64 candidate..."
+    "${SCRIPT_DIR}/verify-smoke.sh" \
+        --image codium-full:candidate-arm64 \
+        --platform linux/arm64 \
+        --port "${HOST_PORT}" \
+        --ssh-port "${HOST_SSH_PORT}" \
+        "${extra_args[@]}" \
+        --export-inventory "${inv_arm64}"
+
+    echo "Comparing exported candidate inventories for parity..."
+    local comp_status=0
+    if ! compare_inventories "${inv_amd64}" "${inv_arm64}"; then
+        comp_status=1
+    fi
+
+    rm -rf "${tmp_dir}" 2>/dev/null || true
+    trap - EXIT INT TERM
+
+    if [ "$comp_status" -eq 0 ]; then
+        echo "=== Dual-Platform Verification and Parity Gate: PASSED ==="
+        return 0
+    else
+        echo "=== Dual-Platform Verification and Parity Gate: FAILED ===" >&2
+        return 1
+    fi
 }
 
 IMAGE="${IMAGE:-codium-full:test}"
@@ -29,9 +180,27 @@ HOST_PORT="${PORT:-${TEST_PORT:-18443}}"
 HOST_SSH_PORT="${SSH_PORT:-${TEST_SSH_PORT:-12222}}"
 SKIP_IN_CONTAINER=0
 EXPORT_INVENTORY=""
+MODE="single"
+COMPARE_FILE1=""
+COMPARE_FILE2=""
+DUAL_PLATFORM=0
 
 while (($#)); do
     case "$1" in
+        --compare-inventories)
+            MODE="compare"
+            if [ $# -lt 3 ]; then
+                echo "ERROR: --compare-inventories requires two file path arguments" >&2
+                usage
+            fi
+            COMPARE_FILE1="$2"
+            COMPARE_FILE2="$3"
+            shift 3
+            ;;
+        --dual-platform)
+            DUAL_PLATFORM=1
+            shift
+            ;;
         --image)
             IMAGE="$2"
             shift 2
@@ -65,6 +234,16 @@ while (($#)); do
             ;;
     esac
 done
+
+if [ "$MODE" = "compare" ]; then
+    compare_inventories "$COMPARE_FILE1" "$COMPARE_FILE2"
+    exit $?
+fi
+
+if [ "$DUAL_PLATFORM" -eq 1 ]; then
+    run_dual_platform
+    exit $?
+fi
 
 TARGET_ARCH="${PLATFORM#linux/}"
 if [ "$TARGET_ARCH" = "$PLATFORM" ]; then
