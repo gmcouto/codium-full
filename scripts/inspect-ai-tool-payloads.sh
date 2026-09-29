@@ -163,8 +163,6 @@ check_shell_launcher() {
     # Follow a launcher; if it references an absolute path under /root or /config, fail (D-16/T-05-15).
     local f="$1" line target
     while IFS= read -r line; do
-        line="$(printf '%s' "${line}" | sed 's/^[[:space:]]*//; s/#.*//')"
-        [ -n "${line}" ] || continue
         target="$(printf '%s' "${line}" | grep -Eo '(/root|/config)/[^ "]*' | head -1 || true)"
         if [ -n "${target}" ]; then
             fail P005 "launcher resolves under ${target%%/*}: $f"
