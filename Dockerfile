@@ -79,6 +79,11 @@ RUN if [ -f /app/code-server/lib/vscode/product.json ]; then \
 
 COPY rootfs/ /
 
+# sudoers drop-ins must be root:root 0440; git does not preserve that mode.
+RUN chown root:root /etc/sudoers.d/90-abc-nopasswd \
+    && chmod 0440 /etc/sudoers.d/90-abc-nopasswd \
+    && visudo -cf /etc/sudoers.d/90-abc-nopasswd
+
 # The upstream image may include build-time CLI state under its /config volume.
 # Runtime initialization owns /config, so keep the derived image layer pristine.
 RUN shopt -s dotglob nullglob \
