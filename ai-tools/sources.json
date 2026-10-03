@@ -187,6 +187,32 @@
         "amd64": "linux-x86_64",
         "arm64": "linux-aarch64"
       }
+    },
+    "pi-agent": {
+      "name": "pi-agent",
+      "distribution": "npm",
+      "requested": {
+        "package": "@earendil-works/pi-coding-agent",
+        "channel": "latest"
+      },
+      "registry": {
+        "host": "registry.npmjs.org",
+        "tarball_prefix": "https://registry.npmjs.org/"
+      },
+      "commands": ["pi", "pi-agent"],
+      "probe": {
+        "family": "version",
+        "args": ["--version"]
+      },
+      "digest_authority": "upstream_sri",
+      "native": {
+        "amd64": null,
+        "arm64": null
+      },
+      "vendor_toolchain_target": {
+        "amd64": "linux-x64",
+        "arm64": "linux-arm64"
+      }
     }
   },
   "allowed_registry_hosts": ["registry.npmjs.org"],

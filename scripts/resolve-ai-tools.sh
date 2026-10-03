@@ -70,7 +70,7 @@ if ! jq -e '.schema_version == 1 and (.tools | type == "object") and (.allowed_a
 fi
 
 # Selection filtering.
-ALL_TOOLS="claude-code openclaude copilot codex opencode cursor-agent antigravity herdr"
+ALL_TOOLS="claude-code openclaude copilot codex opencode cursor-agent antigravity herdr pi-agent"
 if [ -n "${SELECTION}" ]; then
     IFS=',' read -r -a SELECTED <<<"${SELECTION}"
 else
@@ -345,7 +345,7 @@ resolve_cursor() {
 
 for tool in "${TOOLS_ORDERED[@]}"; do
     case "${tool}" in
-        claude-code|openclaude|copilot|codex|opencode) resolve_npm_tool "${tool}" ;;
+        claude-code|openclaude|copilot|codex|opencode|pi-agent) resolve_npm_tool "${tool}" ;;
         herdr) resolve_herdr ;;
         antigravity) resolve_antigravity ;;
         cursor-agent) resolve_cursor ;;

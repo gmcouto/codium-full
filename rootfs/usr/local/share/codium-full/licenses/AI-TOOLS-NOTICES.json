@@ -118,6 +118,21 @@
       ],
       "note": "status=approved-with-obligations",
       "name": "herdr"
+    },
+    {
+      "distribution": "npm",
+      "source_url": "https://github.com/earendil-works/pi",
+      "terms_url": "https://github.com/earendil-works/pi/blob/main/LICENSE",
+      "license_hash": "research-09-2026-09-30-pi-agent-license",
+      "disposition": "approved-with-obligations: MIT with attribution preservation",
+      "required_files": [
+        "LICENSE"
+      ],
+      "required_actions": [
+        "Include MIT attribution notice."
+      ],
+      "note": "status=approved-with-obligations",
+      "name": "pi-agent"
     }
   ]
 }

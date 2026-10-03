@@ -374,6 +374,9 @@ install_npm_tools() {
             [ -e "${bin_file}" ] || continue
             ln -sf "${bin_file}" "/usr/local/bin/$(basename "${bin_file}")"
         done
+        if [ -x "${NPM_PREFIX}/bin/pi" ]; then
+            ln -sf "${NPM_PREFIX}/bin/pi" "/usr/local/bin/pi-agent"
+        fi
     fi
 
     # Postcondition: every requested native package is present in the tree.
@@ -561,7 +564,8 @@ preserve_notices() {
             "openclaude:@gitlawb/openclaude" \
             "copilot:@github/copilot" \
             "codex:@openai/codex" \
-            "opencode:@opencode/cli"; do
+            "opencode:@opencode/cli" \
+            "pi-agent:@earendil-works/pi-coding-agent"; do
             local t="${tool_pkg%%:*}"
             local pkg="${tool_pkg#*:}"
             local pkg_dir="${NPM_LIB}/${pkg}"

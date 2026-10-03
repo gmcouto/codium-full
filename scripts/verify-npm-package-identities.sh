@@ -65,7 +65,7 @@ export PATH="${NPM_BIN_DIR}:/usr/local/bin:/usr/bin:/bin"
 FETCH_BOUND=45
 fail() { local r="$1"; shift; echo "verify-npm-package-identities.sh: FAIL[${r}]: $*" >&2; exit 1; }
 
-NPM_TOOLS="claude-code openclaude copilot codex opencode"
+NPM_TOOLS="claude-code openclaude copilot codex opencode pi-agent"
 
 declare -A PKG_OFFICIAL PKG_EXPECT
 PKG_OFFICIAL[claude-code]="https://raw.githubusercontent.com/anthropics/claude-code/main/README.md"
@@ -78,6 +78,8 @@ PKG_OFFICIAL[codex]="https://raw.githubusercontent.com/openai/codex/main/README.
 PKG_EXPECT[codex]="@openai/codex"
 PKG_OFFICIAL[opencode]="https://opencode.ai/v2/docs"
 PKG_EXPECT[opencode]="@opencode/cli"
+PKG_OFFICIAL[pi-agent]="https://raw.githubusercontent.com/earendil-works/pi/main/README.md"
+PKG_EXPECT[pi-agent]="@earendil-works/pi-coding-agent"
 
 # ---------------------------------------------------------------------------
 # Pure structural validation of a candidate (no network). Used by both the live

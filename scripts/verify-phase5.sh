@@ -89,7 +89,7 @@ jq -e '
     .target.os == "linux" and
     (.target.architecture == "amd64" or .target.architecture == "arm64") and
     (.target.platform == ("linux/" + .target.architecture)) and
-    (.tools | length == 8) and
+    (.tools | length == 9) and
     ([.tools[].name] | length == (unique | length)) and
     all(.tools[]; .result == "installed" and (.commands | length > 0) and (.resolved_version | length > 0))
 ' "${INVENTORY}" >/dev/null 2>&1 || fail V013 "inventory does not satisfy structural schema contract"
@@ -278,7 +278,7 @@ for tool in "${SELECTED_TOOLS[@]}"; do
                             *) fail V034 "unapproved home mutation by '${cmd}': ${rel}" ;;
                         esac
                         ;;
-                    claude-code|openclaude|antigravity|herdr)
+                    claude-code|openclaude|antigravity|herdr|pi-agent)
                         # Must remain strictly zero-mutation
                         fail V034 "unapproved home mutation by zero-mutation tool '${cmd}': ${rel}"
                         ;;

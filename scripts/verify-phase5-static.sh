@@ -111,7 +111,7 @@ MOCK_BIN="${lab}/mock_bin"
 mkdir -p "${MOCK_BIN}"
 
 # Populate valid mocks for all tools so PATH does not pick up host /config/.nvm or /config/.local
-for cmd in claude openclaude copilot codex opencode opencode2 cursor-agent cursor agent agy herdr hrdr; do
+for cmd in claude openclaude copilot codex opencode opencode2 cursor-agent cursor agent agy herdr hrdr pi pi-agent; do
     cat <<EOF > "${MOCK_BIN}/${cmd}"
 #!/bin/sh
 case "${cmd}" in
@@ -123,6 +123,7 @@ case "${cmd}" in
     cursor*|agent) echo "2026.09.28-64d2043" ;;
     agy) echo "1.2.12" ;;
     herdr|hrdr) echo "0.9.1" ;;
+    pi|pi-agent) echo "0.99.1" ;;
 esac
 EOF
     chmod +x "${MOCK_BIN}/${cmd}"
@@ -240,6 +241,17 @@ cat <<'EOF' > "${BASE_INV}"
       "digest": { "authority": "upstream_sha256", "algorithm": "sha256", "value": "test" },
       "architecture": "amd64",
       "commands": ["herdr", "hrdr"],
+      "result": "installed"
+    },
+    {
+      "name": "pi-agent",
+      "distribution": "npm",
+      "requested": { "channel": "latest", "package_or_source": "pi-agent" },
+      "resolved_version": "0.99.1",
+      "source": { "url": "https://registry.npmjs.org/@earendil-works/pi-coding-agent/-/pi-coding-agent-0.99.1.tgz" },
+      "digest": { "authority": "upstream_sri", "algorithm": "sri", "value": "sha512-test" },
+      "architecture": "amd64",
+      "commands": ["pi", "pi-agent"],
       "result": "installed"
     }
   ]

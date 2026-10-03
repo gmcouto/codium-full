@@ -84,8 +84,8 @@ else
     RESOLUTION="${PROJECT_ROOT}/.build/ai-tools/candidate-resolution.json"
 fi
 
-# Canonical eight-tool logical set (must agree between policy, resolution, notices).
-ALL_TOOLS="claude-code openclaude copilot codex opencode cursor-agent antigravity herdr"
+# Canonical nine-tool logical set (must agree between policy, resolution, notices).
+ALL_TOOLS="claude-code openclaude copilot codex opencode cursor-agent antigravity herdr pi-agent"
 
 self_test() {
     # Executable negative fixtures (D-28). Each fixture must be rejected with a
@@ -216,9 +216,9 @@ for t in ${ALL_TOOLS}; do
     fi
 done
 
-# Notices manifest must contain exactly the eight tools with a non-empty disposition.
+# Notices manifest must contain exactly the nine tools with a non-empty disposition.
 N_TOOLS="$(jq -r '.tools | length' "${NOTICES}")"
-[ "${N_TOOLS}" = "8" ] || fail_closed R007 "notices manifest missing tools (found ${N_TOOLS})"
+[ "${N_TOOLS}" = "9" ] || fail_closed R007 "notices manifest missing tools (found ${N_TOOLS})"
 for t in ${ALL_TOOLS}; do
     disp="$(jq -r --arg t "${t}" '.tools[] | select(.name==$t) | .disposition // ""' "${NOTICES}")"
     [ -n "${disp}" ] || fail_closed R008 "notice record missing disposition for: ${t}"
@@ -300,7 +300,7 @@ case "${MODE}" in
         else
             eligible="false"
         fi
-        report="$(printf '%s\n' ${ALL_TOOLS} | jq -R -s 'split("\n")[:8]' )"
+        report="$(printf '%s\n' ${ALL_TOOLS} | jq -R -s 'split("\n")[:9]' )"
         report="$(jq -nc --argjson blockers "${APPROVAL_BLOCKERS}" --argjson tools "${report}" '{external_release_eligible:('"${eligible}"'=="true"), blockers:$blockers, tools:$tools}')"
         if [ -n "${OUTPUT}" ]; then
             printf '%s\n' "${report}" > "${OUTPUT}"

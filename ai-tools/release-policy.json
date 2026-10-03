@@ -106,6 +106,19 @@
       "evidence_hash": "research-05-2026-09-28-herdr-license",
       "required_notices": ["LICENSE"],
       "external_approval": null
+    },
+    "pi-agent": {
+      "logical_name": "pi-agent",
+      "status": "approved-with-obligations",
+      "status_reason": "MIT-licensed; redistribution permitted with attribution notice preserved.",
+      "distribution": "npm",
+      "source_url": "https://github.com/earendil-works/pi",
+      "terms_url": "https://github.com/earendil-works/pi/blob/main/LICENSE",
+      "finding_date": "2026-09-30",
+      "expiry": "2027-09-30",
+      "evidence_hash": "research-09-2026-09-30-pi-agent-license",
+      "required_notices": ["LICENSE"],
+      "external_approval": null
     }
   }
 }

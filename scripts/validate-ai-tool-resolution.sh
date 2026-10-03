@@ -154,7 +154,8 @@ codex
 opencode
 cursor-agent
 antigravity
-herdr"
+herdr
+pi-agent"
 
 if [ -n "${SELECTION}" ]; then
     IFS=',' read -r -a REQSEL <<<"${SELECTION}"
@@ -240,7 +241,7 @@ jq -e '[.tools[] | select(.name=="cursor-agent") | .native_payloads[] ] | all(.[
 # Selection-aware: only npm tools actually present in the candidate are checked,
 # and each must carry a resolved_version. Guarded so it never aborts silently
 # under `set -e`.
-for t in claude-code openclaude copilot codex opencode; do
+for t in claude-code openclaude copilot codex opencode pi-agent; do
     if ! printf '%s\n' "${TOOL_NAMES}" | grep -qx "${t}"; then continue; fi
     jq -e --arg t "${t}" '[.tools[] | select(.name==$t and .distribution=="npm") | .resolved_version] | length == 1' "${CANDIDATE}" >/dev/null 2>&1 \
         || fail E020 "npm tool ${t} must resolve to exactly one version"

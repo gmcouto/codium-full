@@ -24,8 +24,8 @@
     },
     "tools": {
       "type": "array",
-      "description": "One normalized entry per logical tool; exactly eight unique entries required (D-04/D-07/D-12).",
-      "minItems": 8,
+      "description": "One normalized entry per logical tool; exactly nine unique entries required (D-04/D-07/D-12).",
+      "minItems": 9,
       "items": {
         "$ref": "#/$defs/toolEntry"
       }
@@ -57,7 +57,8 @@
             "opencode",
             "cursor-agent",
             "antigravity",
-            "herdr"
+            "herdr",
+            "pi-agent"
           ]
         },
         "distribution": {

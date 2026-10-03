@@ -46,10 +46,10 @@ validate_inventory_file() {
         (.target.architecture == "amd64" or .target.architecture == "arm64") and
         (.target.platform == ("linux/" + .target.architecture)) and
         (.tools | type == "array") and
-        (.tools | length == 8) and
+        (.tools | length == 9) and
         ([.tools[].name] | length == (unique | length)) and
         all(.tools[];
-            (.name as $n | ["claude-code","openclaude","copilot","codex","opencode","cursor-agent","antigravity","herdr"] | index($n) != null) and
+            (.name as $n | ["claude-code","openclaude","copilot","codex","opencode","cursor-agent","antigravity","herdr","pi-agent"] | index($n) != null) and
             (.distribution == "npm" or .distribution == "standalone") and
             (.resolved_version | type == "string" and length > 0) and
             (.commands | type == "array" and length > 0) and
@@ -384,9 +384,10 @@ echo "  ✓ code-server HTTP response (200/302) and HTML content confirmed (TEST
 
 # Verify OpenSSH service readiness (TEST-02)
 echo "Waiting for SSH service on ${PROBE_HOST}:${PROBE_SSH_PORT}..."
+SSH_OPTS=(-p "${PROBE_SSH_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes -o ConnectTimeout=5 -o LogLevel=ERROR)
 SSH_READY=0
 for _ in {1..50}; do
-    if timeout 1 bash -c "</dev/tcp/${PROBE_HOST}/${PROBE_SSH_PORT}" 2>/dev/null; then
+    if ssh "${SSH_OPTS[@]}" -i "${CLIENT_KEY}" "abc@${PROBE_HOST}" true >/dev/null 2>&1; then
         SSH_READY=1
         break
     fi
@@ -398,16 +399,26 @@ if [ "$SSH_READY" -ne 1 ]; then
     exit 1
 fi
 
-SSH_OPTS=(-p "${PROBE_SSH_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes -o ConnectTimeout=5 -o LogLevel=ERROR)
-
 echo "Testing authorized SSH key login as user abc (TEST-02)..."
-AUTH_USER=$(ssh "${SSH_OPTS[@]}" -i "${CLIENT_KEY}" "abc@${PROBE_HOST}" whoami)
+AUTH_USER=""
+for _ in {1..10}; do
+    if AUTH_USER=$(ssh "${SSH_OPTS[@]}" -i "${CLIENT_KEY}" "abc@${PROBE_HOST}" whoami 2>/dev/null) && [ "$AUTH_USER" = "abc" ]; then
+        break
+    fi
+    sleep 0.2
+done
 if [ "$AUTH_USER" != "abc" ]; then
     echo "ERROR: SSH public key authentication failed for user abc (got: '${AUTH_USER}')" >&2
     exit 1
 fi
 
-AUTH_UID=$(ssh "${SSH_OPTS[@]}" -i "${CLIENT_KEY}" "abc@${PROBE_HOST}" id -u)
+AUTH_UID=""
+for _ in {1..10}; do
+    if AUTH_UID=$(ssh "${SSH_OPTS[@]}" -i "${CLIENT_KEY}" "abc@${PROBE_HOST}" id -u 2>/dev/null) && [ "$AUTH_UID" = "1000" ]; then
+        break
+    fi
+    sleep 0.2
+done
 if [ "$AUTH_UID" != "1000" ]; then
     echo "ERROR: SSH user UID is not 1000 (got: '${AUTH_UID}')" >&2
     exit 1
@@ -469,19 +480,19 @@ else
     echo "  ✓ All language runtimes and core dev tools execute as user abc (TEST-03)"
 
     # 2. Rolling AI CLIs and aliases against tool-inventory.json (TEST-03)
-    echo "Verifying 8 AI coding tools across 12 aliases as user abc (TEST-03)..."
+    echo "Verifying 9 AI coding tools across 14 aliases as user abc (TEST-03)..."
     docker exec -u abc "${CONTAINER_ID}" bash -lc '
         set -euo pipefail
         [ "$(id -u)" -eq 1000 ] || { echo "ERROR: In-container check not running as user abc (id 1000)" >&2; exit 1; }
         [ -f /usr/local/share/codium-full/tool-inventory.json ] || { echo "ERROR: tool-inventory.json missing" >&2; exit 1; }
 
-        ALIASES=(claude openclaude copilot codex opencode opencode2 cursor-agent cursor agent agy herdr hrdr)
+        ALIASES=(claude openclaude copilot codex opencode opencode2 cursor-agent cursor agent agy herdr hrdr pi pi-agent)
         for cmd in "${ALIASES[@]}"; do
             out=$("$cmd" --version 2>&1 | head -n 1)
             [ -n "$out" ] || { echo "ERROR: Command $cmd returned empty version" >&2; exit 1; }
         done
     '
-    echo "  ✓ All 8 AI tools across 12 aliases pass non-root --version execution (TEST-03)"
+    echo "  ✓ All 9 AI tools across 14 aliases pass non-root --version execution (TEST-03)"
 
     # 3. Shell integrations and pnpm shims (TEST-04)
     echo "Verifying pnpm precedence and compatibility shims via verify-phase4.sh (TEST-04)..."
@@ -503,11 +514,11 @@ if [ -n "$EXPORT_INVENTORY" ]; then
     echo "Exporting provenance inventory from container to ${EXPORT_INVENTORY}..."
     mkdir -p "$(dirname "$EXPORT_INVENTORY")"
     docker cp "${CONTAINER_ID}:/usr/local/share/codium-full/tool-inventory.json" "$EXPORT_INVENTORY"
-    if ! jq -e '.tools | length == 8' "$EXPORT_INVENTORY" >/dev/null 2>&1; then
-        echo "ERROR: Exported tool inventory does not contain exactly 8 valid tools" >&2
+    if ! jq -e '.tools | length == 9' "$EXPORT_INVENTORY" >/dev/null 2>&1; then
+        echo "ERROR: Exported tool inventory does not contain exactly 9 valid tools" >&2
         exit 1
     fi
-    echo "  ✓ Provenance inventory successfully exported and verified (8 tools)"
+    echo "  ✓ Provenance inventory successfully exported and verified (9 tools)"
 fi
 
 echo "=== All verify-smoke.sh probes passed successfully ==="
