@@ -383,29 +383,28 @@ fi
 echo "  ✓ code-server HTTP response (200/302) and HTML content confirmed (TEST-01)"
 
 # Verify OpenSSH service readiness (TEST-02)
-echo "Waiting for SSH service on ${PROBE_HOST}:${PROBE_SSH_PORT}..."
-SSH_READY=0
-for _ in {1..50}; do
-    if timeout 1 bash -c "</dev/tcp/${PROBE_HOST}/${PROBE_SSH_PORT}" 2>/dev/null; then
-        SSH_READY=1
+SSH_OPTS=(-p "${PROBE_SSH_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes -o ConnectTimeout=2 -o LogLevel=ERROR)
+
+echo "Waiting for SSH key authentication as user abc..."
+SSH_DEADLINE=$(( $(date +%s) + 10 ))
+AUTH_USER=""
+SSH_AUTH_OUTPUT=""
+while [ "$(date +%s)" -lt "$SSH_DEADLINE" ]; do
+    if SSH_AUTH_OUTPUT=$(ssh "${SSH_OPTS[@]}" -i "${CLIENT_KEY}" "abc@${PROBE_HOST}" whoami 2>&1) && [ "$SSH_AUTH_OUTPUT" = "abc" ]; then
+        AUTH_USER="$SSH_AUTH_OUTPUT"
         break
     fi
     sleep 0.2
 done
 
-if [ "$SSH_READY" -ne 1 ]; then
-    echo "ERROR: SSH service failed to open port ${PROBE_SSH_PORT} on ${PROBE_HOST}" >&2
+if [ "$AUTH_USER" != "abc" ]; then
+    echo "ERROR: SSH key authentication for user abc did not become ready within 10 seconds" >&2
+    printf '%s\n' "${SSH_AUTH_OUTPUT}" >&2
+    docker logs "${CONTAINER_ID}" >&2
     exit 1
 fi
-
-SSH_OPTS=(-p "${PROBE_SSH_PORT}" -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null -o BatchMode=yes -o ConnectTimeout=5 -o LogLevel=ERROR)
 
 echo "Testing authorized SSH key login as user abc (TEST-02)..."
-AUTH_USER=$(ssh "${SSH_OPTS[@]}" -i "${CLIENT_KEY}" "abc@${PROBE_HOST}" whoami)
-if [ "$AUTH_USER" != "abc" ]; then
-    echo "ERROR: SSH public key authentication failed for user abc (got: '${AUTH_USER}')" >&2
-    exit 1
-fi
 
 AUTH_UID=$(ssh "${SSH_OPTS[@]}" -i "${CLIENT_KEY}" "abc@${PROBE_HOST}" id -u)
 if [ "$AUTH_UID" != "1000" ]; then
