@@ -27,7 +27,6 @@ Open `http://localhost:8443` to use code-server. SSH listens on port `2222` and 
 - Claude Code, OpenClaude, Cursor Agent, Copilot CLI, Codex CLI, OpenCode, Antigravity, and Herdr
 - OpenSSH, jq, ripgrep, fd, fzf, and zoxide
 - Microsoft extension marketplace support
-- Native npm; yarn and npx compatibility commands backed by pnpm, with native escape hatches
 
 ## Releases
 
