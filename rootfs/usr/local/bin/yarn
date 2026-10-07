@@ -2,7 +2,7 @@
 set -f
 if [ "${CODIUM_BYPASS_SHIMS:-0}" = 1 ]; then
     if [ -x /usr/bin/yarn ]; then exec /usr/bin/yarn "$@"; fi
-    printf '%s\n' '[codium-shim] native yarn is unavailable; use pnpm.' >&2
+    printf '%s\n' '[codium-shim] native yarn is unavailable; use yarn-native or pnpm.' >&2
     exit 127
 fi
 if [ "$#" -eq 0 ]; then exec /usr/bin/pnpm install; fi
@@ -15,7 +15,7 @@ case "$1" in
         ;;
     -h|--help) exec /usr/bin/pnpm --help ;;
     set|plugin|policies|publish|login|dlx)
-        printf '[codium-shim] yarn %s is unsupported. Use pnpm or yarn-native/CODIUM_BYPASS_SHIMS=1 for native Yarn.\n' "$*" >&2
+        printf '[codium-shim] yarn %s is unsupported. Use yarn-native or pnpm directly.\n' "$*" >&2
         exit 1
         ;;
     install) shift; exec /usr/bin/pnpm install "$@" ;;
@@ -31,7 +31,7 @@ case "$1" in
     test) shift; exec /usr/bin/pnpm test "$@" ;;
     create|why) exec /usr/bin/pnpm "$@" ;;
     *)
-        printf '[codium-shim] yarn %s is unsupported. Use pnpm or yarn-native/CODIUM_BYPASS_SHIMS=1 for native Yarn.\n' "$*" >&2
+        printf '[codium-shim] yarn %s is unsupported. Use yarn-native or pnpm directly.\n' "$*" >&2
         exit 1
         ;;
 esac

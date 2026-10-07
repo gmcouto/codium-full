@@ -18,7 +18,6 @@ echo "=== [2/5] Shell Script Linting (ShellCheck) ==="
 SHELL_FILES=(
     scripts/*.sh
     rootfs/etc/profile.d/*.sh
-    rootfs/usr/local/bin/npm
     rootfs/usr/local/bin/npx
     rootfs/usr/local/bin/yarn
 )

@@ -2,7 +2,7 @@
 set -f
 if [ "${CODIUM_BYPASS_SHIMS:-0}" = 1 ]; then
     if [ -x /usr/bin/npx ]; then exec /usr/bin/npx "$@"; fi
-    printf '%s\n' '[codium-shim] native npx is unavailable; use pnpm exec or pnpm dlx.' >&2
+    printf '%s\n' '[codium-shim] native npx is unavailable; use /usr/bin/npx or pnpm exec/dlx.' >&2
     exit 127
 fi
 if [ "$#" -eq 0 ]; then

@@ -494,10 +494,10 @@ else
     '
     echo "  ✓ All 9 AI tools across 14 aliases pass non-root --version execution (TEST-03)"
 
-    # 3. Shell integrations and pnpm shims (TEST-04)
+    # 3. Shell integrations and pnpm compatibility shims (TEST-04)
     echo "Verifying pnpm precedence and compatibility shims via verify-phase4.sh (TEST-04)..."
     docker exec -u abc "${CONTAINER_ID}" /scripts/verify-phase4.sh
-    echo "  ✓ pnpm precedence, shim translation, and fail-closed diagnostics verified (TEST-04)"
+    echo "  ✓ pnpm precedence, npx/yarn shim translation, native npm, and fail-closed diagnostics verified (TEST-04)"
 
     echo "Verifying zoxide and fzf shell integrations in interactive bash session as abc (TEST-04)..."
     docker exec -u abc "${CONTAINER_ID}" bash -i -c 'type z >/dev/null && type zi >/dev/null && (type __fzf_select__ >/dev/null 2>&1 || type fzf-file-widget >/dev/null 2>&1 || type _fzf_file_completion >/dev/null 2>&1 || type _fzf_setup_completion >/dev/null 2>&1)' >/dev/null 2>&1

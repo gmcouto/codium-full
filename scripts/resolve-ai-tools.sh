@@ -30,7 +30,7 @@ while (($#)); do
 done
 
 # Prefer the image native npm binary; fall back to PATH for local/dev runs.
-# The Phase 4 shim reference lives at /usr/local/bin/npm which must never be used.
+# Never resolve to a pnpm compatibility shim.
 is_codium_shim() {
     local target="$1"
     [ -n "$target" ] && [ -f "$target" ] && grep -q 'codium-shim' "$target" 2>/dev/null
@@ -38,8 +38,6 @@ is_codium_shim() {
 
 if [ -n "${NPM_BIN:-}" ] && [ -x "${NPM_BIN}" ] && ! is_codium_shim "${NPM_BIN}"; then
     : # Keep user-specified NPM_BIN
-elif command -v npm-native >/dev/null 2>&1 && ! is_codium_shim "$(command -v npm-native)"; then
-    NPM_BIN="$(command -v npm-native)"
 elif [ -x /usr/bin/npm ] && ! is_codium_shim /usr/bin/npm; then
     NPM_BIN="/usr/bin/npm"
 elif command -v npm >/dev/null 2>&1 && ! is_codium_shim "$(command -v npm)"; then
@@ -55,7 +53,7 @@ if [ -z "${NPM_BIN}" ] || [ ! -x "${NPM_BIN}" ]; then
 fi
 NPM_BIN_DIR="$(dirname -- "${NPM_BIN}")"
 
-# Redirect runtime PATH so lifecycle/helpers cannot pick up the Phase 4 shim.
+# Put native npm first on PATH for lifecycle scripts and helper processes.
 export PATH="${NPM_BIN_DIR}:/usr/local/bin:/usr/bin:/bin"
 
 if [ ! -f "${SOURCES}" ]; then

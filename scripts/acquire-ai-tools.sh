@@ -306,14 +306,14 @@ install_npm_tools() {
     full_npm_selection="$(jq -r --arg arch "${TARGETARCH}" '[.tools[] | select(.distribution=="npm") | {name, version:.resolved_version}] | .[] | "\(.name)@\(.version)"' "${BUNDLE}")"
 
     # An explicit direct-dependency npm project under the temp build home so
-    # lifecycle PATH yields bare `npm` as /usr/bin/npm (never the Phase 4 shim).
+    # lifecycle PATH yields the native bare `npm` command.
     TMP_HOME="$(mktemp -d)"
     mkdir -p "${TMP_HOME}/npm" "${TMP_HOME}/cache" "${TMP_HOME}/etc" "${NPM_LIB}"
     export HOME="${TMP_HOME}"
     export npm_config_cache="${TMP_HOME}/cache"
     export npm_config_userconfig="${TMP_HOME}/etc/npmrc"
-    # Lifecycle PATH: first entry is /usr/bin so a nested bare `npm` resolves to
-    # the native /usr/bin/npm and never the Phase 4 shim in /usr/local/bin.
+    # Lifecycle PATH: first entry is /usr/bin so nested bare `npm` resolves
+    # directly to the native system npm.
     export PATH="/usr/bin:/bin:/usr/local/bin"
 
     # Pre-ensure each tool's selected native optional package from the bundle so

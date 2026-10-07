@@ -63,7 +63,6 @@ RUN apt-get update && \
     && gh --version && rg --version && fd --version && fzf --version && jq --version && zoxide --version \
     && pnpm --version \
     && yarn --version \
-    && ln -sf /usr/bin/npm /usr/local/bin/npm-native \
     && ln -sf /usr/bin/npx /usr/local/bin/npx-native \
     && ln -sf /usr/bin/yarn /usr/local/bin/yarn-native \
     && ln -sf /usr/bin/pnpm /usr/local/bin/pnpm \

@@ -49,14 +49,12 @@ is_codium_shim() {
 
 if [ -n "${NPM_BIN:-}" ] && [ -x "${NPM_BIN}" ] && ! is_codium_shim "${NPM_BIN}"; then
     : # Keep user-specified NPM_BIN
-elif command -v npm-native >/dev/null 2>&1 && ! is_codium_shim "$(command -v npm-native)"; then
-    NPM_BIN="$(command -v npm-native)"
 elif [ -x /usr/bin/npm ] && ! is_codium_shim /usr/bin/npm; then
     NPM_BIN="/usr/bin/npm"
 elif command -v npm >/dev/null 2>&1 && ! is_codium_shim "$(command -v npm)"; then
     NPM_BIN="$(command -v npm)"
 else
-    echo "verify-npm: no native npm (Phase 4 shim prohibited)" >&2
+    echo "verify-npm: no native npm found" >&2
     exit 1
 fi
 NPM_BIN_DIR="$(dirname -- "${NPM_BIN}")"
