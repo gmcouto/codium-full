@@ -5,7 +5,7 @@ Codium Full is a ready-to-use development environment based on LinuxServer's cod
 Images are available for `linux/amd64` and `linux/arm64` from:
 
 ```text
-ghcr.io/biel-homelab/codium-full
+ghcr.io/gmcouto/codium-full
 ```
 
 ## Run it
@@ -16,7 +16,7 @@ docker run -d \
   -p 8443:8443 \
   -p 2222:2222 \
   -v codium-config:/config \
-  ghcr.io/biel-homelab/codium-full:v1.0.0
+  ghcr.io/gmcouto/codium-full:v1.0.0
 ```
 
 Open `http://localhost:8443` to use code-server. SSH listens on port `2222` and uses key authentication.

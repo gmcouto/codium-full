@@ -67,7 +67,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/biel-homelab/codium-full
+          images: ghcr.io/gmcouto/codium-full
           flavor: |
             latest=false
           tags: |
