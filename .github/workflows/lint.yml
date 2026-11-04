@@ -12,7 +12,7 @@ permissions:
 jobs:
   static-lint:
     name: Fast Static Analysis
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -20,7 +20,7 @@ jobs:
       - name: Lint Dockerfile (Hadolint)
         # Local binary instead of hadolint/hadolint-action: the action builds
         # a Docker image FROM ghcr.io/hadolint/hadolint, whose anonymous
-        # GHCR token exchange is denied from the self-hosted DinD runners,
+        # GHCR token exchange is denied from some self-hosted DinD runners,
         # and the leftover GHCR job credentials in ~/.docker/config.json
         # make BuildKit send a stale PAT that GHCR rejects. The runner
         # image ships hadolint; fall back to the official release binary.
