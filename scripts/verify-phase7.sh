@@ -133,8 +133,8 @@ grep -q "needs: smoke-test-gate" "${PUBLISH_WORKFLOW}" \
 grep -q "platforms: linux/amd64,linux/arm64" "${PUBLISH_WORKFLOW}" \
     || fail V743 "publish.yml does not configure platforms: linux/amd64,linux/arm64"
 
-grep -q "ghcr.io/biel-homelab/codium-full" "${PUBLISH_WORKFLOW}" \
-    || fail V744 "publish.yml does not target ghcr.io/biel-homelab/codium-full"
+grep -q "ghcr.io/gmcouto/codium-full" "${PUBLISH_WORKFLOW}" \
+    || fail V744 "publish.yml does not target ghcr.io/gmcouto/codium-full"
 echo "  ✓ Strict tag immutability, multi-platform targets, and smoke test gating verified"
 
 echo "=== Phase 7 Verification Suite: ALL CHECKS PASSED (V701..V744) ==="

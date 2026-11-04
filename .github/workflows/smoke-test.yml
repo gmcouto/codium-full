@@ -20,7 +20,7 @@ permissions:
 jobs:
   smoke-test-matrix:
     name: Smoke Test (${{ matrix.platform }})
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-24.04
     strategy:
       fail-fast: false
       matrix:
@@ -71,7 +71,7 @@ jobs:
   architecture-parity-gate:
     name: Cross-Architecture Parity Gate
     needs: smoke-test-matrix
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4

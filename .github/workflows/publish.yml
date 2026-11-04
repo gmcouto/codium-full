@@ -25,7 +25,7 @@ jobs:
   publish-ghcr:
     name: Build & Publish Multi-Arch Image to GHCR
     needs: smoke-test-gate
-    runs-on: [self-hosted, Linux, X64]
+    runs-on: ubuntu-24.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -67,7 +67,7 @@ jobs:
         id: meta
         uses: docker/metadata-action@v5
         with:
-          images: ghcr.io/biel-homelab/codium-full
+          images: ghcr.io/gmcouto/codium-full
           flavor: |
             latest=false
           tags: |
